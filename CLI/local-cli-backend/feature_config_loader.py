@@ -53,34 +53,36 @@ def load_feature_config() -> Dict:
 
 def is_feature_enabled(feature_name: str) -> bool:
     """
-    Check if a core feature is enabled
-    Returns True if feature is enabled, False otherwise
-    If feature is not in config, defaults to True (backward compatibility)
+    Check if a core feature is enabled.
+    Config is source of truth:
+    - missing feature => disabled
     """
     config = load_feature_config()
     features = config.get("features", {})
 
-    if feature_name not in features:
-        # Feature not in config, default to enabled for backward compatibility
-        return True
+    feature = features.get(feature_name)
 
-    return features[feature_name].get("enabled", True)
+    if feature is None:
+        return False
+
+    return feature.get("enabled", True)
 
 
 def is_plugin_enabled(plugin_name: str) -> bool:
     """
-    Check if a plugin is enabled
-    Returns True if plugin is enabled, False otherwise
-    If plugin is not in config, defaults to True (backward compatibility)
+    Check if a plugin is enabled.
+    Config is source of truth:
+    - missing plugin => disabled
     """
     config = load_feature_config()
     plugins = config.get("plugins", {})
 
-    if plugin_name not in plugins:
-        # Plugin not in config, default to enabled for backward compatibility
-        return True
+    plugin = plugins.get(plugin_name)
 
-    return plugins[plugin_name].get("enabled", True)
+    if plugin is None:
+        return False
+
+    return plugin.get("enabled", True)
 
 
 def get_enabled_features() -> Set[str]:
@@ -147,29 +149,39 @@ def delete_plugin_feature(slug: str) -> None:
     write_feature_config(config)
 
 
-def enable_plugin_feature(slug: str) -> None:
-    """Enables a feature in the config, errors if it doesn't exist"""
+def _find_plugin_config_key(plugins: dict, install_slug: str) -> Optional[str]:
+    if install_slug in plugins:
+        return install_slug
+    for k, v in plugins.items():
+        if isinstance(v, dict) and v.get("slug") == install_slug:
+            return k
+    return None
+
+
+def resolve_plugin_enabled_from_config(install_slug: str) -> bool:
     config = load_feature_config()
     plugins = config.get("plugins", {})
+    key = _find_plugin_config_key(plugins, install_slug)
+    if key is None:
+        return True
+    return bool(plugins[key].get("enabled", True))
 
-    for plugin_slug, data in plugins.items():
-        if plugin_slug == slug:
-            data["enabled"] = True
-            write_feature_config(config)
-            return
 
-    raise Exception(f"Failed enabing plugin feature: {slug} not found")
+def set_plugin_enabled_by_install_slug(install_slug: str, enabled: bool) -> None:
+    config = read_feature_config()
+    plugins = config.setdefault("plugins", {})
+    key = _find_plugin_config_key(plugins, install_slug)
+    if key is None:
+        plugins.setdefault(install_slug, {})
+        plugins[install_slug]["enabled"] = enabled
+    else:
+        plugins[key]["enabled"] = enabled
+    write_feature_config(config)
+
+
+def enable_plugin_feature(slug: str) -> None:
+    set_plugin_enabled_by_install_slug(slug, True)
 
 
 def disable_plugin_feature(slug: str) -> None:
-    """Disable a feature in the config, errors if it doesn't exist"""
-    config = load_feature_config()
-    plugins = config.get("plugins", {})
-
-    for plugin_slug, data in plugins.items():
-        if plugin_slug == slug:
-            data["enabled"] = False
-            write_feature_config(config)
-            return
-
-    raise Exception(f"Failed disabling plugin feature: {slug} not found")
+    set_plugin_enabled_by_install_slug(slug, False)

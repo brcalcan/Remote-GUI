@@ -1,0 +1,15 @@
+.error-message {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  color: #721c24;
+  font-weight: bold;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}

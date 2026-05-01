@@ -6,6 +6,7 @@
 !templates/**
 !requirements.txt
 !start.sh
+!setup.cfg
 
 # Explicitly exclude junk inside allowed trees
 
@@ -14,7 +15,7 @@
 **/*.pyc
 outputs/
 
-node_modules
-**/node_modules
-.cache
-**/.cache
+# Exclude node_modules — both the dir AND its contents
+# (without the /** the !CLI/** rule above wins for files inside it)
+CLI/local-cli-fe-full/node_modules
+CLI/local-cli-fe-full/node_modules/**

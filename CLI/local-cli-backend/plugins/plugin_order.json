@@ -4,6 +4,7 @@
     "reportgenerator",
     "nodecheck",
     "mcpclient",
-    "calculator"
+    "calculator",
+    "videostreamviewer"
   ]
 }

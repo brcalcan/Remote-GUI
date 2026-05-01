@@ -108,10 +108,21 @@ const McpclientPage = ({ node }) => {
   // Load models when endpoint changes, useDocker toggles, or on mount
   useEffect(() => {
     if (useDocker && llmEndpoint && llmEndpoint.trim()) {
-      // Debounce Docker endpoint changes
+      // Basic URL validation: must start with http(s):// and have a valid host:port
+      const trimmed = llmEndpoint.trim();
+      try {
+        const url = new URL(trimmed);
+        if (!url.hostname || url.hostname.endsWith('.') || url.hostname.startsWith('.')) return;
+        // Reject incomplete IPs (e.g. "192.168" or "192.168.210")
+        const parts = url.hostname.split('.');
+        if (parts.every(p => /^\d+$/.test(p)) && parts.length !== 4) return;
+      } catch {
+        return; // not a valid URL yet, skip
+      }
+      // Debounce valid endpoint changes
       const timeoutId = setTimeout(() => {
-        loadModels(llmEndpoint);
-      }, 500);
+        loadModels(trimmed);
+      }, 800);
       return () => clearTimeout(timeoutId);
     } else if (!useDocker) {
       // Load local models immediately when not using Docker

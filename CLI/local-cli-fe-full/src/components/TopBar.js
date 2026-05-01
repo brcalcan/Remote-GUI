@@ -6,7 +6,7 @@ import NodePicker from './NodePicker.js';
 import { NavLink } from 'react-router-dom';
 
 
-const TopBar = ({ nodes, selectedNode, onAddNode, onSelectNode, restoredFromStorage, onClearStoredData }) => {
+const TopBar = ({ nodes, selectedNode, onAddNode, onRemoveNode, onSelectNode, restoredFromStorage, onClearStoredData }) => {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -15,6 +15,7 @@ const TopBar = ({ nodes, selectedNode, onAddNode, onSelectNode, restoredFromStor
           nodes={nodes} 
           selectedNode={selectedNode} 
           onAddNode={onAddNode} 
+          onRemoveNode={onRemoveNode}
           onSelectNode={onSelectNode} 
         />
       </div>

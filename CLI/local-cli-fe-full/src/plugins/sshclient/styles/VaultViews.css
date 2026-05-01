@@ -1,0 +1,216 @@
+.vault-locked {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: system-ui, sans-serif;
+}
+
+.vault-lock-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.vault-locked-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.vault-unlock-container {
+  width: 100%;
+  max-width: 320px;
+  margin-top: 24px;
+}
+
+.vault-password-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  outline: none;
+}
+
+.vault-password-error {
+  border: 1px solid #ef4444;
+}
+
+.vault-error-text {
+  color: #ef4444;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.vault-unlock-btn {
+  width: 100%;
+  background-color: #000;
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 12px;
+  cursor: pointer;
+  border: none;
+}
+
+.vault-reset-btn {
+  width: 100%;
+  background-color: transparent;
+  color: #ef4444;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+  border: 1px solid #fecaca;
+  font-size: 13px;
+}
+
+/* MAIN VIEW */
+
+.vault-main {
+  padding: 24px;
+  font-family: system-ui, sans-serif;
+}
+
+.vault-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 16px;
+}
+
+.vault-header-title {
+  margin: 0;
+}
+
+.vault-header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.vault-lock-btn {
+  background-color: #fef3c7;
+  border: 1px solid #fbbf24;
+  color: #92400e;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.vault-close-btn {
+  background-color: #dce3eb;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: black;
+}
+
+/* FORM */
+
+.vault-form-container {
+  padding: 16px;
+  margin-bottom: 30px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.vault-add-btn {
+  width: 100%;
+  background-color: #000;
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+/* LIST */
+
+.vault-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vault-host-card {
+  padding: 16px;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.vault-host-title {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #1e293b;
+}
+
+.vault-secret-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.vault-secret-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.vault-secret-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-key {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-password {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.vault-username {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.vault-secret-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vault-date {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.vault-delete-btn {
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #ef4444;
+}

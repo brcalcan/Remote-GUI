@@ -6,19 +6,83 @@ from parsers import parse_response
 import datetime
 import json
 import requests
+import os
 
 from classes import *
 
 import anylog_api.anylog_connector as anylog_connector
 
 
-# Connect to AnyLog / EdgeLake connector
-conn = '10.0.0.11:32249'
-# conn = '127.0.0.1:32149'
+DEFAULT_ANYLOG_CONNECT_TIMEOUT = 5.0
+DEFAULT_ANYLOG_READ_TIMEOUT = 30.0
 
-auth = ()
-timeout = 30
-anylog_conn = anylog_connector.AnyLogConnector(conn=conn, auth=auth, timeout=timeout)
+
+def _parse_positive_timeout(
+    value: str | None,
+    *,
+    default: float,
+    env_name: str
+) -> float:
+    """Parse timeout env values safely with sane fallbacks."""
+    if value is None or value == "":
+        return default
+    try:
+        parsed = float(value)
+        if parsed <= 0:
+            raise ValueError("Timeout must be > 0")
+        return parsed
+    except (TypeError, ValueError):
+        print(
+            f"Invalid {env_name} value '{value}'. "
+            f"Falling back to default {default}s."
+        )
+        return default
+
+
+def _get_anylog_timeout():
+    """
+    Return timeout for AnyLogConnector.
+    Supports either a single timeout (ANYLOG_REQUEST_TIMEOUT) or
+    split connect/read values (ANYLOG_CONNECT_TIMEOUT, ANYLOG_READ_TIMEOUT).
+    """
+    request_timeout = os.getenv("ANYLOG_REQUEST_TIMEOUT")
+    if request_timeout not in (None, ""):
+        return _parse_positive_timeout(
+            request_timeout,
+            default=DEFAULT_ANYLOG_READ_TIMEOUT,
+            env_name="ANYLOG_REQUEST_TIMEOUT"
+        )
+
+    connect_timeout = _parse_positive_timeout(
+        os.getenv("ANYLOG_CONNECT_TIMEOUT"),
+        default=DEFAULT_ANYLOG_CONNECT_TIMEOUT,
+        env_name="ANYLOG_CONNECT_TIMEOUT"
+    )
+    read_timeout = _parse_positive_timeout(
+        os.getenv("ANYLOG_READ_TIMEOUT"),
+        default=DEFAULT_ANYLOG_READ_TIMEOUT,
+        env_name="ANYLOG_READ_TIMEOUT"
+    )
+    return (connect_timeout, read_timeout)
+
+
+def _create_anylog_connector(conn: str, auth: tuple):
+    """Create connector with compatibility fallback for timeout formats."""
+    timeout = _get_anylog_timeout()
+    try:
+        return anylog_connector.AnyLogConnector(conn=conn, auth=auth, timeout=timeout)
+    except TypeError:
+        # Older connector versions may not accept tuple timeout.
+        if isinstance(timeout, tuple):
+            fallback_timeout = max(timeout)
+            print(
+                "AnyLogConnector does not accept tuple timeout; "
+                f"using single timeout={fallback_timeout}s."
+            )
+            return anylog_connector.AnyLogConnector(
+                conn=conn, auth=auth, timeout=fallback_timeout
+            )
+        raise
 
 class Policy(BaseModel):
     name: str  # Policy name
@@ -119,8 +183,7 @@ def make_request(conn, method, command, topic=None, destination=None, payload=No
 
 
     auth = ()
-    timeout = 30
-    anylog_conn = anylog_connector.AnyLogConnector(conn=conn, auth=auth, timeout=timeout)
+    anylog_conn = _create_anylog_connector(conn=conn, auth=auth)
 
     blobs = False
     streaming = False
@@ -461,14 +524,49 @@ def get_tables(conn: str, database: str) -> list:
 def get_columns(conn: str, database: str, table: str) -> list:
     """
     Get all columns in a specific table using the columns command with JSON format.
+    Returns empty list if table doesn't exist or has errors.
     """
     try:
         # Use AnyLog command to get columns with JSON format
         raw_response = make_request(conn, "GET", f'get columns where dbms="{database}" and table="{table}" and format=json')
+        
+        # Check if make_request returned an error response
+        if isinstance(raw_response, dict) and raw_response.get("type") == "error":
+            error_msg = raw_response.get("data", "Unknown error")
+            print(f"Table {database}.{table} error from make_request: {error_msg}")
+            return []
+        
         structured_data = parse_response(raw_response)
+        
+        # Check if parse_response returned an error
+        if isinstance(structured_data, dict) and structured_data.get("type") == "error":
+            error_msg = structured_data.get("data", "Unknown error")
+            print(f"Table {database}.{table} error from parse_response: {error_msg}")
+            return []
+        
+        # Check if the parsed data contains an error (nested error from make_request)
+        if isinstance(structured_data, dict) and structured_data.get("type") == "json":
+            data = structured_data.get("data")
+            # Check if data itself is an error dict
+            if isinstance(data, dict) and data.get("type") == "error":
+                error_msg = data.get("data", "Unknown error")
+                print(f"Table {database}.{table} nested error in parsed data: {error_msg}")
+                return []
         
         if structured_data.get("type") == "json" and structured_data.get("data"):
             columns_data = structured_data["data"]
+            
+            # Check if columns_data is actually a dict with column info
+            # If it's empty or not a dict, return empty list
+            if not isinstance(columns_data, dict) or len(columns_data) == 0:
+                return []
+            
+            # Check if columns_data contains error indicators (like err_code, err_text)
+            if isinstance(columns_data, dict):
+                if "err_code" in columns_data or "err_text" in columns_data or "error" in columns_data:
+                    error_msg = columns_data.get("err_text") or columns_data.get("error") or "Error in response"
+                    print(f"Table {database}.{table} has error indicators in response: {error_msg}")
+                    return []
             
             # Convert the JSON object to a list of column objects
             columns = []
@@ -484,9 +582,25 @@ def get_columns(conn: str, database: str, table: str) -> list:
             
             return columns
         else:
+            # No valid data structure means table doesn't exist or has no columns
             return []
     except Exception as e:
-        print(f"Error getting columns: {e}")
+        error_msg = str(e)
+        # Check if error indicates table doesn't exist
+        error_lower = error_msg.lower()
+        if any(indicator in error_lower for indicator in [
+            "failed to load table metadata",
+            "connection broken",
+            "invalidchunklength",
+            "invalid literal",
+            "err_code",
+            "invalidchunklength",
+            "connection broken"
+        ]):
+            # These errors mean table doesn't exist - return empty list
+            print(f"Table {database}.{table} does not exist or cannot be accessed: {error_msg}")
+        else:
+            print(f"Error getting columns for {database}.{table}: {error_msg}")
         return []
 
 
@@ -505,6 +619,27 @@ def get_data_nodes(conn: str) -> list:
             return []
     except Exception as e:
         print(f"Error getting data nodes: {e}")
+        return []
+
+
+def get_data_nodes_for_table(conn: str, dbms: str, table: str) -> list:
+    """
+    Get data nodes for a specific dbms and table using 'get data nodes'.
+    Returns an empty list if there is no table at that location (no error raised).
+    Use this instead of get_columns for existence checks, as it returns empty list
+    instead of raising/returning errors when the table doesn't exist.
+    """
+    try:
+        raw_response = make_request(conn, "GET", f'get data nodes where format=json and dbms="{dbms}" and table="{table}"')
+        if isinstance(raw_response, dict) and raw_response.get("type") == "error":
+            return []
+        structured_data = parse_response(raw_response)
+        if structured_data.get("type") == "json" and structured_data.get("data"):
+            data = structured_data["data"]
+            return data if isinstance(data, list) else []
+        return []
+    except Exception as e:
+        print(f"get_data_nodes_for_table {dbms}.{table}: {e}")
         return []
 
 

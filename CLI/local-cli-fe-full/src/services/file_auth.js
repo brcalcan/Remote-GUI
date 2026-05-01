@@ -1,7 +1,7 @@
 // File-based service (no authentication required)
 // Simplified version that works without user authentication
 
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
 
 // Default user ID for all operations
 const DEFAULT_USER_ID = "default-user-12345";

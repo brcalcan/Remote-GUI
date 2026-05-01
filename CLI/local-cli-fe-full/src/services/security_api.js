@@ -2,9 +2,9 @@
 
 // const API_BASE_URL = process.env.NODE_ENV === 'production' 
 //   ? "/api/security"  // In production (Docker), use relative path for nginx proxy
-//   : "http://localhost:8000/security"; // In development, use direct backend URL
+//   : "http://localhost:8080/security"; // In development, use direct backend URL
 
-const API_BASE_URL = (window._env_?.REACT_APP_API_URL || "http://localhost:8000") + "/security";
+const API_BASE_URL = (window._env_?.VITE_API_URL || "http://localhost:8080") + "/security";
 
 export async function login(nodeAddress, pubkey) {
   if (!nodeAddress || !pubkey) {

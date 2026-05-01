@@ -31,10 +31,10 @@ class PluginEngine:
             if "plugin_installation.json" in files:
                 file_path = Path(root) / "plugin_installation.json"
                 try:
-                    # print(f"FOUND INSTALLATION: {file_path}")
                     local_plugins.append(CompletePlugin.load(file_path))
-                except Exception:
+                except Exception as e:
                     print(f"Found corrupted plugin install: {file_path}")
+                    print(e)
                     continue
 
         return local_plugins

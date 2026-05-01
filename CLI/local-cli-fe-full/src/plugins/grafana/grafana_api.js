@@ -1,7 +1,7 @@
 // Grafana Plugin API
 // Simple API client for Grafana plugin
 
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
 
 /**
  * Get Grafana information

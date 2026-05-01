@@ -219,7 +219,7 @@ def parse_response(raw: str) -> dict:
         # Check if text resembles a table (e.g., has headers and delimiters)
 
         if isinstance(raw, dict) and 'blobs' in raw:
-            print("raw blobs:", raw)
+            # print("raw blobs:", raw)
             return {"type": "blobs", "data": raw['blobs']['Query']}
             # return {"type": "table", "data": raw['blobs']['Query']}
 

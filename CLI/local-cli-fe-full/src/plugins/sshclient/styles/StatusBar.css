@@ -1,0 +1,61 @@
+.statusbar {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.statusbar-left {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+}
+
+.exit-button {
+  color: red;
+  font-weight: medium;
+  font-size: 14px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.statusbar-center {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-icon {
+  vertical-align: middle;
+}
+
+.hostname {
+  margin: 0;
+  font-family: monospace;
+  line-height: 1;
+  font-size: 14px;
+}
+
+.connection-id {
+  color: #64748b;
+  font-size: 14px;
+  margin: 2px 0;
+  font-weight: 700;
+}
+
+.time-counter {
+  font-family: monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+}

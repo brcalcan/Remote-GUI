@@ -14,6 +14,9 @@ const PluginCard = ({
   onUninstall,
   onExpand,
   onTriggerMetrics,
+  updateInfo = null,
+  onUpdate,
+  updateInProgress = false,
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
@@ -65,6 +68,22 @@ const PluginCard = ({
           </button>
         ) : (
           <>
+            {updateInfo && onUpdate && (
+              <div className="mp-plugin-update-row">
+                <div className="mp-plugin-update-meta">
+                  Update available: installed v{updateInfo.installedVersion} → registry v
+                  {updateInfo.latestVersion}
+                </div>
+                <button
+                  type="button"
+                  className="mp-plugin-update-btn"
+                  disabled={updateInProgress}
+                  onClick={() => onUpdate()}
+                >
+                  {updateInProgress ? "Updating…" : `Update to v${updateInfo.latestVersion}`}
+                </button>
+              </div>
+            )}
             <div style={{ display: "inline-flex", alignItems: "center", borderRadius: "999px", border: "1px solid #e5e7eb", backgroundColor: "#f9fafb", overflow: "hidden", width: "100%" }}>
               <button onClick={onTriggerMetrics} style={{ flex: 1, padding: "10px 16px", border: "none", background: "transparent", fontWeight: "600", fontSize: "13px", color: "#111827", cursor: "pointer", textAlign: "left", whiteSpace: "nowrap" }}>
                 View logs and metrics

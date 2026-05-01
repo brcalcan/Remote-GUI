@@ -1,3 +1,4 @@
+.pids/
 .DS_Store
 venv*/
 .venv*/

@@ -1,7 +1,7 @@
 // MCP Client Plugin API
 // API client for MCP Client plugin
 
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
 
 /**
  * Get MCP client information

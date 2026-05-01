@@ -50,7 +50,13 @@ function DataTable({
   defaultColumnWidth = 150,
 }) {
   const tableRef = useRef(null);
-  const draggingRef = useRef({ active: false, colIndex: -1, startX: 0, startWidth: 0 });
+  const draggingRef = useRef({
+    active: false,
+    colIndex: -1,
+    side: 'right',
+    startX: 0,
+    startWidths: [],
+  });
   
   // State for showing/hiding internal columns
   const [showInternalColumns, setShowInternalColumns] = useState(false);
@@ -66,19 +72,93 @@ function DataTable({
   // ✅ Hooks are unconditional
   const [colWidths, setColWidths] = useState(() => headers.map(() => defaultColumnWidth));
 
+  const getResizeSide = (index, totalCols) => {
+    if (totalCols < 2) return null;
+    return index < totalCols - 1 ? 'right' : 'left';
+  };
+
+  const pickSideForDrag = (index, dx, totalCols) => {
+    if (totalCols < 2 || dx === 0) return null;
+    const hasLeft = index > 0;
+    const hasRight = index < totalCols - 1;
+
+    // Drag right => grow using right-side neighbors when possible.
+    if (dx > 0) {
+      if (hasRight) return 'right';
+      if (hasLeft) return 'left';
+      return null;
+    }
+    // Drag left => grow using left-side neighbors when possible.
+    if (hasLeft) return 'left';
+    if (hasRight) return 'right';
+    return null;
+  };
+
+  const getNeighborIndices = (colIndex, totalCols, side) => {
+    if (side === 'right') {
+      return Array.from({ length: totalCols - colIndex - 1 }, (_, i) => colIndex + 1 + i);
+    }
+    return Array.from({ length: colIndex }, (_, i) => colIndex - 1 - i);
+  };
+
+  const applyWidthDelta = (prev, colIndex, dx, side) => {
+    if (colIndex < 0 || !side) return prev;
+
+    const startWidths = draggingRef.current.startWidths?.length
+      ? draggingRef.current.startWidths
+      : prev;
+    const next = startWidths.slice();
+    const neighborIndices = getNeighborIndices(colIndex, next.length, side);
+
+    // For last-column handles (side=left), moving left should expand the last column.
+    const effectiveDx = side === 'left' ? -dx : dx;
+
+    if (effectiveDx > 0) {
+      // Grow target by borrowing space from neighbors until they hit minimum.
+      const targetGrowthCapacity = maxColumnWidth - next[colIndex];
+      const neighborShrinkCapacity = neighborIndices.reduce(
+        (sum, idx) => sum + Math.max(0, next[idx] - minColumnWidth),
+        0
+      );
+      let growth = Math.min(effectiveDx, targetGrowthCapacity, neighborShrinkCapacity);
+      next[colIndex] += growth;
+      for (const idx of neighborIndices) {
+        if (growth <= 0) break;
+        const take = Math.min(growth, Math.max(0, next[idx] - minColumnWidth));
+        next[idx] -= take;
+        growth -= take;
+      }
+    } else if (effectiveDx < 0) {
+      // Shrink target and give freed space back to neighbors up to max width.
+      let give = Math.min(
+        -effectiveDx,
+        Math.max(0, next[colIndex] - minColumnWidth),
+        neighborIndices.reduce((sum, idx) => sum + Math.max(0, maxColumnWidth - next[idx]), 0)
+      );
+      next[colIndex] -= give;
+      for (const idx of neighborIndices) {
+        if (give <= 0) break;
+        const add = Math.min(give, Math.max(0, maxColumnWidth - next[idx]));
+        next[idx] += add;
+        give -= add;
+      }
+    }
+
+    return next;
+  };
+
   useEffect(() => {
     setColWidths(headers.map(() => defaultColumnWidth));
   }, [headers, defaultColumnWidth]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      const { active, colIndex, startX, startWidth } = draggingRef.current;
+      const { active, colIndex, side, startX } = draggingRef.current;
       if (!active) return;
       const dx = e.clientX - startX;
+      const sideForDrag = pickSideForDrag(colIndex, dx, headers.length) || side;
       setColWidths((prev) => {
-        const next = prev.slice();
-        next[colIndex] = clamp(startWidth + dx, minColumnWidth, maxColumnWidth);
-        return next;
+        return applyWidthDelta(prev, colIndex, dx, sideForDrag);
       });
       e.preventDefault();
     };
@@ -96,15 +176,18 @@ function DataTable({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [minColumnWidth, maxColumnWidth]);
+  }, [minColumnWidth, maxColumnWidth, headers.length]);
 
   const startDrag = (e, index) => {
-    const startWidth = colWidths[index];
+    const side = getResizeSide(index, headers.length);
+    if (!side) return;
+
     draggingRef.current = {
       active: true,
       colIndex: index,
+      side,
       startX: e.clientX,
-      startWidth,
+      startWidths: colWidths.slice(),
     };
     document.body.classList.add('col-resizing');
     e.preventDefault();
@@ -114,6 +197,9 @@ function DataTable({
   const autoFit = (index) => {
     const table = tableRef.current;
     if (!table) return;
+    const side = getResizeSide(index, headers.length);
+    if (!side) return;
+
     const cells = table.querySelectorAll(`[data-col-index="${index}"]`);
     let maxWidth = minColumnWidth;
     cells.forEach((el) => {
@@ -121,9 +207,10 @@ function DataTable({
       maxWidth = Math.max(maxWidth, contentWidth);
     });
     setColWidths((prev) => {
-      const next = prev.slice();
-      next[index] = clamp(maxWidth, minColumnWidth, maxColumnWidth);
-      return next;
+      draggingRef.current.startWidths = prev.slice();
+      const targetWidth = clamp(maxWidth, minColumnWidth, maxColumnWidth);
+      const dx = targetWidth - prev[index];
+      return applyWidthDelta(prev, index, dx, side);
     });
   };
 
@@ -131,16 +218,18 @@ function DataTable({
     if (e.key === 'Enter') {
       autoFit(idx);
     } else if (e.key === 'ArrowLeft') {
+      const side = getResizeSide(idx, headers.length);
+      if (!side) return;
       setColWidths((prev) => {
-        const next = prev.slice();
-        next[idx] = clamp(prev[idx] - 10, minColumnWidth, maxColumnWidth);
-        return next;
+        draggingRef.current.startWidths = prev.slice();
+        return applyWidthDelta(prev, idx, -10, side);
       });
     } else if (e.key === 'ArrowRight') {
+      const side = getResizeSide(idx, headers.length);
+      if (!side) return;
       setColWidths((prev) => {
-        const next = prev.slice();
-        next[idx] = clamp(prev[idx] + 10, minColumnWidth, maxColumnWidth);
-        return next;
+        draggingRef.current.startWidths = prev.slice();
+        return applyWidthDelta(prev, idx, 10, side);
       });
     }
   };

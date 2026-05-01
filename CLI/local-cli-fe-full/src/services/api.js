@@ -1,9 +1,104 @@
 // src/services/api.js
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+// const API_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
+const API_URL = window._env_?.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:8080";
 
+/** Run blockchain get license on the connected node. Returns parsed license data or null. */
+export async function getLicenseInfo({ connectInfo }) {
+  if (!connectInfo) return null;
+  try {
+    const response = await sendCommand({
+      connectInfo,
+      method: 'GET',
+      command: 'blockchain get license',
+    });
+    if (!response?.data) return null;
+    const data = Array.isArray(response.data) ? response.data : [response.data];
+    const first = data[0];
+    return first?.license ?? first ?? null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Run get version on the connected node. Returns version string or null. */
+export async function getNodeVersion({ connectInfo }) {
+  if (!connectInfo) return null;
+  try {
+    const response = await sendCommand({
+      connectInfo,
+      method: 'GET',
+      command: 'get version',
+    });
+    if (!response?.data) return null;
+    if (typeof response.data === 'string') return response.data;
+    if (typeof response.data === 'object' && response.data?.version) return response.data.version;
+    return JSON.stringify(response.data);
+  } catch (e) {
+    return null;
+  }
+}
+
+/** Fetch app version from backend (GET /version). Returns { version, commit, branch, dirty, ... } or null on failure. */
+export async function getVersion() {
+  try {
+    const response = await fetch(`${API_URL}/version`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+const REACHABILITY_TIMEOUT_MS = 10_000;
+
+/**
+ * Verify a node is reachable by running "get status" with a 10-second timeout.
+ * Accepts an optional AbortSignal so the caller can cancel early.
+ * Resolves to { ok: true } when the node responds, or { ok: false, message } otherwise.
+ */
+export async function checkNodeReachable(connectInfo, { signal } = {}) {
+  const controller = new AbortController();
+  if (signal) signal.addEventListener('abort', () => controller.abort());
+  const timeout = setTimeout(() => controller.abort(), REACHABILITY_TIMEOUT_MS);
+
+  try {
+    const requestBody = {
+      command: { type: 'GET', cmd: 'get status', raw_text: false },
+      conn: { conn: connectInfo },
+    };
+
+    const response = await fetch(`${API_URL}/send-command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      return { ok: false, message: `Node ${connectInfo} is not reachable (HTTP ${response.status}).` };
+    }
+
+    const result = await response.json();
+    if (result?.type === 'error') {
+      return { ok: false, message: result.data || 'Node returned an error response.' };
+    }
+    return { ok: true };
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      if (signal?.aborted) {
+        return { ok: false, message: 'Connection check cancelled.' };
+      }
+      return { ok: false, message: `Node ${connectInfo} did not respond within 10 seconds.` };
+    }
+    return { ok: false, message: `Node ${connectInfo} is not reachable.` };
+  }
+}
 
 // Example: "sendCommand" function that POSTs a command to your server
-export async function sendCommand({ connectInfo, method, command }) {
+export async function sendCommand({ connectInfo, method, command, rawText }) {
   if (!connectInfo || !command || !method) {
     alert('Missing required fields');
     return;
@@ -12,7 +107,7 @@ export async function sendCommand({ connectInfo, method, command }) {
   try {
     // Construct your request body
     const requestBody = {
-      command: { type: method, cmd: command },
+      command: { type: method, cmd: command, raw_text: !!rawText },
       conn: { conn: connectInfo },
     };
 

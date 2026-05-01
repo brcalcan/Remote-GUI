@@ -1,0 +1,61 @@
+.about-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.about-content h1 {
+  margin-bottom: 24px;
+  font-size: 1.75rem;
+  color: #1e1e2f;
+}
+
+.about-section,
+.about-footer {
+  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.about-section p,
+.about-footer p {
+  margin: 10px 0;
+}
+
+.about-section p:first-child,
+.about-footer p:first-child {
+  margin-top: 0;
+}
+
+.about-section p:last-child,
+.about-footer p:last-child {
+  margin-bottom: 0;
+}
+
+.about-footer {
+  color: #555;
+}
+
+.about-footer a {
+  color: #2e86de;
+  text-decoration: none;
+}
+
+.about-footer a:hover {
+  text-decoration: underline;
+}
+
+.about-back {
+  margin-top: 24px;
+}
+
+.about-back a {
+  color: #2e86de;
+  text-decoration: none;
+}
+
+.about-back a:hover {
+  text-decoration: underline;
+}

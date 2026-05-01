@@ -21,6 +21,7 @@ try:
         monitor_network,
         grab_network_nodes,
         get_data_nodes,
+        get_data_nodes_for_table,
         get_companies,
         get_nodes_by_company,
         get_databases,
@@ -197,6 +198,7 @@ __all__ = [
     'monitor_network',
     'grab_network_nodes',
     'get_data_nodes',
+    'get_data_nodes_for_table',
     'get_companies',
     'get_nodes_by_company',
     

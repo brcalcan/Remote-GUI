@@ -173,7 +173,16 @@ class PluginManager:
             )
 
         await self._engine.stop_plugin(slug=slug)
-        del self._redirect_mappings[slug]
+
+        # start_plugin registers encoded slug and manifest api_prefix — remove both.
+        self._redirect_mappings.pop(slug.replace("/", "%2F"), None)
+        self._redirect_mappings.pop(slug, None)
+        for p in self.get_local_plugins():
+            if p.core.slug == slug:
+                prefix = (p.core.manifest.api_prefix or "").strip("/")
+                if prefix:
+                    self._redirect_mappings.pop(prefix, None)
+                break
 
     def install_and_track(self, plugin: MarketplacePlugin, plugins_path: Path) -> Task:
         slug = plugin.core.slug

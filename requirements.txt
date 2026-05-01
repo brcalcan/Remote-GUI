@@ -16,13 +16,14 @@ requests~=2.32
 httpx~=0.28
 aiohttp~=3.11
 websockets~=14.2
+paramiko~=4.0.0
 aiofiles
 aiofile
 
 # --------------------
 # Database
 # --------------------
-psycopg2-binary~=2.9
+psycopg2-binary~=2.9.9
 
 # --------------------
 # Supabase (aligned set)

@@ -6,8 +6,10 @@ import React, {
   useRef,
 } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
+
 import Client from "./Client";
 import Monitor from "./Monitor";
 import Policies from "./Policies";
@@ -19,14 +21,12 @@ import Bookmarks from "./Bookmarks";
 import SqlQueryGenerator from "./SqlQueryGenerator";
 import BlockchainManager from "./BlockchainManager";
 import PolicyGeneratorPage from "./Security";
+import About from "./About";
 
-// Unified plugin loader (dev = require.context, prod = Module Federation)
 import {
   getPluginPages,
   refreshPluginPages,
   initializePluginOrder,
-  discoverFederatedPlugins,
-  fullEvictPlugin,
 } from "../plugins/loader";
 
 import {
@@ -36,20 +36,18 @@ import {
 } from "../services/featureConfig";
 
 import { getBookmarks } from "../services/file_auth";
+
 import "../styles/Dashboard.css";
 import PluginErrorBoundary from "../plugins/marketplace/PluginErrorBoundary";
 
-// ─── Detect federation (prod) mode ───────────────────────────────────────────
-
-const IS_FEDERATION_MODE =
-  window.__PLUGIN_MODE__ === "federation" ||
-  window.location.port === "8000" ||
-  window.location.port === "";
+// ─────────────────────────────────────────────
+// Plugin mount helpers
+// ─────────────────────────────────────────────
 
 const PluginMountGate = ({ children }) => {
-  const [mounted, setMounted] = React.useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
@@ -58,56 +56,9 @@ const PluginMountGate = ({ children }) => {
   return children;
 };
 
-const PluginRouteWithReload = ({ plugin, selectedNode }) => {
-  const [fading, setFading] = React.useState(false);
-
-  React.useEffect(() => {
-    const visitedKey = `plugin-visited-${plugin.path}`;
-    const reloadedKey = `plugin-just-reloaded-${plugin.path}`;
-
-    const justReloaded = sessionStorage.getItem(reloadedKey);
-    const hasVisited = sessionStorage.getItem(visitedKey);
-
-    if (justReloaded) {
-      sessionStorage.removeItem(reloadedKey);
-      return;
-    }
-
-    if (hasVisited) {
-      setFading(true);
-      sessionStorage.setItem(reloadedKey, "true");
-      sessionStorage.removeItem(visitedKey);
-      // setTimeout(() => window.location.reload(), 300);
-      return;
-    }
-
-    sessionStorage.setItem(visitedKey, "true");
-  }, [plugin.path]);
-
-  if (fading) {
-    return (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "white",
-          zIndex: 9999,
-          transition: "opacity 0.3s",
-        }}
-      />
-    );
-  }
-
-  return (
-    <PluginErrorBoundary>
-      <Suspense fallback={<PluginLoadingFallback name={plugin.name} />}>
-        <plugin.component node={selectedNode} />
-      </Suspense>
-    </PluginErrorBoundary>
-  );
-};
-
-// ─── Feature route config ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Feature routes
+// ─────────────────────────────────────────────
 
 const FEATURE_ROUTES = [
   { path: "client", component: Client, featureKey: "client" },
@@ -126,54 +77,80 @@ const FEATURE_ROUTES = [
   { path: "security", component: PolicyGeneratorPage, featureKey: "security" },
 ];
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Dashboard
+// ─────────────────────────────────────────────
 
 const Dashboard = () => {
   const location = useLocation();
+  const isLoadingRef = useRef(false);
 
   const [pluginPages, setPluginPages] = useState(() => getPluginPages());
 
-  // Feature config state
   const [enabledFeatures, setEnabledFeatures] = useState(new Set());
   const [enabledPlugins, setEnabledPlugins] = useState(new Set());
   const [configLoaded, setConfigLoaded] = useState(false);
 
-  // Load initial state from localStorage
   const [nodes, setNodes] = useState(() => {
     const saved = localStorage.getItem("dashboard-nodes");
     return saved ? JSON.parse(saved) : [];
   });
+
   const [selectedNode, setSelectedNode] = useState(
     () => localStorage.getItem("dashboard-selected-node") || null,
   );
+
   const [restoredFromStorage, setRestoredFromStorage] = useState(false);
 
-  const isLoadingRef = useRef(false);
+  // ─────────────────────────────────────────────
+  // Load plugins + feature config
+  // ─────────────────────────────────────────────
 
   const loadPluginsAndConfig = useCallback(async () => {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
+
     try {
       const freshPages = await refreshPluginPages();
+      console.log("[Dashboard] freshPages:", Object.keys(freshPages));
+      console.log("[Dashboard] pluginEnabled checks:");
+      for (const pluginName of Object.keys(freshPages)) {
+        const enabled = await isPluginEnabled(pluginName);
+        console.log(`  ${pluginName} → ${enabled}`);
+      }
       setPluginPages((prev) => {
         const prevKeys = Object.keys(prev).sort().join(",");
         const nextKeys = Object.keys(freshPages).sort().join(",");
         return prevKeys === nextKeys ? prev : freshPages;
       });
-      // setPluginPages(freshPages);
 
       await initializeFeatureConfig();
+
       const enabled = new Set();
       for (const route of FEATURE_ROUTES) {
-        if (await isFeatureEnabled(route.featureKey))
+        if (await isFeatureEnabled(route.featureKey)) {
           enabled.add(route.featureKey);
+        }
       }
       setEnabledFeatures(enabled);
 
+      const { getEnabledPlugins } = await import("../services/featureConfig");
+      const enabledInConfig = await getEnabledPlugins();
+
       const enabledPluginSet = new Set();
-      for (const pluginName of Object.keys(freshPages)) {
-        if (await isPluginEnabled(pluginName)) enabledPluginSet.add(pluginName);
+      for (const [pluginName, plugin] of Object.entries(freshPages)) {
+        const slug = plugin._raw?.slug;
+        const id = plugin._raw?.id;
+
+        if (
+          enabledInConfig.has(pluginName) ||
+          enabledInConfig.has(slug) ||
+          enabledInConfig.has(id)
+        ) {
+          enabledPluginSet.add(pluginName);
+        }
       }
+
       setEnabledPlugins(enabledPluginSet);
       setConfigLoaded(true);
     } finally {
@@ -187,32 +164,49 @@ const Dashboard = () => {
   }, [loadPluginsAndConfig]);
 
   useEffect(() => {
+    window.addEventListener("anylog:plugins-changed", loadPluginsAndConfig);
+    return () =>
+      window.removeEventListener("anylog:plugins-changed", loadPluginsAndConfig);
+  }, [loadPluginsAndConfig]);
+
+  // ─────────────────────────────────────────────
+  // Persistence
+  // ─────────────────────────────────────────────
+
+  useEffect(() => {
     localStorage.setItem("dashboard-nodes", JSON.stringify(nodes));
   }, [nodes]);
 
   useEffect(() => {
-    if (selectedNode)
+    if (selectedNode) {
       localStorage.setItem("dashboard-selected-node", selectedNode);
-    else localStorage.removeItem("dashboard-selected-node");
+    } else {
+      localStorage.removeItem("dashboard-selected-node");
+    }
   }, [selectedNode]);
 
   useEffect(() => {
     if (selectedNode && !nodes.includes(selectedNode)) {
       setNodes((prev) => [...prev, selectedNode]);
     }
-  }, [selectedNode, nodes]);
+  }, [selectedNode]);
 
   useEffect(() => {
     const hasStored =
       localStorage.getItem("dashboard-nodes") ||
       localStorage.getItem("dashboard-selected-node");
+
     if (!hasStored) return;
+
     setRestoredFromStorage(true);
     const t = setTimeout(() => setRestoredFromStorage(false), 3000);
     return () => clearTimeout(t);
   }, []);
 
-  // Default bookmark on first load
+  // ─────────────────────────────────────────────
+  // Default bookmark selection
+  // ─────────────────────────────────────────────
+
   useEffect(() => {
     (async () => {
       try {
@@ -220,23 +214,37 @@ const Dashboard = () => {
           const res = await getBookmarks();
           const list = Array.isArray(res.data) ? res.data : [];
           const def = list.find((b) => b.is_default);
+
           if (def?.node) {
             setSelectedNode(def.node);
-            if (!nodes.includes(def.node))
+            if (!nodes.includes(def.node)) {
               setNodes((prev) => [...prev, def.node]);
+            }
           }
         }
       } catch (e) {
         console.error("Dashboard error:", e);
-        // ignore
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─────────────────────────────────────────────
+  // Node handlers
+  // ─────────────────────────────────────────────
+
   const handleAddNode = (newNode) => {
     if (newNode && !nodes.includes(newNode)) {
       setNodes((prev) => [...prev, newNode]);
+    }
+  };
+
+  const handleRemoveNode = (nodeToRemove) => {
+    setNodes((prev) => prev.filter((n) => n !== nodeToRemove));
+
+    if (selectedNode === nodeToRemove) {
+      const remaining = nodes.filter((n) => n !== nodeToRemove);
+      setSelectedNode(remaining.length > 0 ? remaining[0] : null);
     }
   };
 
@@ -247,7 +255,9 @@ const Dashboard = () => {
     setSelectedNode(null);
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────
 
   return (
     <div className="dashboard-container">
@@ -255,15 +265,18 @@ const Dashboard = () => {
         nodes={nodes}
         selectedNode={selectedNode}
         onAddNode={handleAddNode}
+        onRemoveNode={handleRemoveNode}
         onSelectNode={setSelectedNode}
         restoredFromStorage={restoredFromStorage}
         onClearStoredData={clearStoredData}
       />
+
       <div className="dashboard-content">
-        <Sidebar />
+        <Sidebar selectedNode={selectedNode} />
+
         <div className="dashboard-main">
           <Routes>
-            {/* ── Core feature routes ── */}
+            {/* ── Feature routes ── */}
             {FEATURE_ROUTES.filter((r) =>
               enabledFeatures.has(r.featureKey),
             ).map((route) => {
@@ -286,38 +299,34 @@ const Dashboard = () => {
                   />
                 );
               }
+
+              const C = route.component;
               return (
                 <Route
                   key={route.path}
                   path={route.path}
-                  element={<route.component node={selectedNode} />}
+                  element={<C node={selectedNode} />}
                 />
               );
             })}
 
-            {/* ── Always-available routes ── */}
+            {/* ── Always available routes ── */}
             <Route
               path="userprofile"
               element={<UserProfile node={selectedNode} />}
             />
 
-            {/*             {configLoaded &&
-              Object.entries(pluginPages)
-                .filter(([name]) => enabledPlugins.has(name))
-                .map(([key, plugin]) => (
-                  <Route
-                    key={key}
-                    path={plugin.path}
-                    element={
-                      <React.Suspense
-                        fallback={<PluginLoadingFallback name={plugin.name} />}
-                      >
-                        <plugin.component node={selectedNode} />
-                      </React.Suspense>
-                    }
-                  />
-                ))} */}
+            <Route
+              path="about"
+              element={
+                <About
+                  key={selectedNode || "no-node"}
+                  node={selectedNode}
+                />
+              }
+            />
 
+            {/* ── Plugin routes ── */}
             {configLoaded &&
               Object.entries(pluginPages)
                 .filter(([name]) => enabledPlugins.has(name))
@@ -330,7 +339,9 @@ const Dashboard = () => {
                         <PluginErrorBoundary>
                           <Suspense
                             fallback={
-                              <PluginLoadingFallback name={plugin.name} />
+                              <div style={{ padding: 32 }}>
+                                Loading {plugin.name}…
+                              </div>
                             }
                           >
                             <plugin.component node={selectedNode} />
@@ -341,33 +352,32 @@ const Dashboard = () => {
                   />
                 ))}
 
-            {/* ── Default / catch-all ── */}
+            {/* ── Fallback ── */}
             <Route
               path="*"
               element={(() => {
                 if (enabledFeatures.has("client"))
                   return <Client node={selectedNode} />;
+
                 const first = FEATURE_ROUTES.find((r) =>
                   enabledFeatures.has(r.featureKey),
                 );
+
                 if (first) {
                   const C = first.component;
                   return <C node={selectedNode} />;
                 }
-                return <div style={{ padding: 32 }}>No features enabled.</div>;
+
+                return (
+                  <div style={{ padding: 32 }}>
+                    No features enabled.
+                  </div>
+                );
               })()}
             />
           </Routes>
         </div>
       </div>
-    </div>
-  );
-};
-
-const PluginLoadingFallback = ({ name }) => {
-  return (
-    <div style={{ padding: 32, color: "#64748b", fontSize: 14 }}>
-      Loading {name}…
     </div>
   );
 };

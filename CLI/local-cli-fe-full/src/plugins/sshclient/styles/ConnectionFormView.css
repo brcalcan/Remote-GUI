@@ -1,0 +1,106 @@
+.form-container {
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  padding: 24px;
+  color: #334155;
+  background-color: #fff;
+}
+
+/* Header */
+.form-header {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+.form-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: #0f172a;
+}
+
+.form-description {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Field */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.full-width {
+  grid-column: 1 / span 2;
+}
+
+/* Label */
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.required {
+  color: #ef4444;
+}
+
+/* Inputs */
+.form-input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+  background-color: #f8fafc;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-input {
+  cursor: pointer;
+}
+
+/* Buttons */
+.form-button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-button.primary {
+  background-color: #0f172a;
+  color: #fff;
+}
+
+.form-button.secondary {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.form-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

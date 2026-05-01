@@ -7,7 +7,7 @@ import StreamingPlayer     from '../components/StreamingPlayer';
 import StreamingGrid       from '../components/StreamingGrid';
 import '../styles/ViewFiles.css';  // <-- import the new stylesheet
 
-const BACKEND_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const BACKEND_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
 
 const ViewFiles = () => {
 

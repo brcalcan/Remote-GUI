@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getDatabases, getTables, getColumns, sendCommand } from '../services/api';
 import DataTable from '../components/DataTable';
+import { exportToCSV, exportToPDF } from '../utils/tableExport';
 import '../styles/SqlQueryGenerator.css';
 
 // run client () sql opcua_demo format = table "SELECT min(value), max(value), avg(value) FROM t11 WHERE period(hour, 3, now(), timestamp)"
@@ -1819,6 +1820,16 @@ const SqlQueryGenerator = ({ node }) => {
                   <p><strong>Rows:</strong> {executionResult.data ? executionResult.data.length : 0}</p>
                   {executionResult.data && executionResult.data.length > 0 && executionResult.data[0] && (
                     <p><strong>Columns:</strong> {Object.keys(executionResult.data[0]).length}</p>
+                  )}
+                  {executionResult.data && executionResult.data.length > 0 && executionResult.data[0] && (
+                    <div className="table-export-buttons">
+                      <button type="button" onClick={() => exportToCSV(executionResult.data, 'sql-query')} className="table-export-btn" title="Export table to CSV">
+                        Export CSV
+                      </button>
+                      <button type="button" onClick={() => exportToPDF(executionResult.data, null, { title: 'SQL Query Results', filename: 'sql-query' })} className="table-export-btn" title="Export table to PDF">
+                        Export PDF
+                      </button>
+                    </div>
                   )}
                   {executionResult.data && executionResult.data.length > 0 && executionResult.data[0] ? (
                     <div className="table-container">

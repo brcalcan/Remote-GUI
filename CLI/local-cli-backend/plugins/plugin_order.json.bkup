@@ -1,0 +1,12 @@
+{
+  "plugin_order": [
+    "grafana",
+    "reportgenerator",
+    "nodecheck",
+    "calculator",
+    "mcpclient",
+    "sshclient",
+    "mcpclient",
+    "videostreamviewer"
+  ]
+}

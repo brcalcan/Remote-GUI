@@ -98,9 +98,6 @@ def load_plugins(app):
     
     # Load plugins in the determined order
     for plugin_name in plugin_names:
-        if plugin_name == "calculator":
-            print("Skipping test calculator plugin")
-            continue
         # Check if plugin is enabled in feature config
         if not is_plugin_enabled(plugin_name):
             print(f"⏭️  Skipping disabled plugin: {plugin_name}")

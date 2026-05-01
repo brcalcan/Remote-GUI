@@ -19,7 +19,7 @@ export const fetchFeatureConfig = async () => {
 
   configFetchPromise = (async () => {
     try {
-      const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+      const API_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
       const response = await fetch(`${API_URL}/feature-config`);
       if (response.ok) {
         const data = await response.json();
@@ -51,34 +51,34 @@ export const fetchFeatureConfig = async () => {
 };
 
 /**
- * Check if a feature is enabled
+ * Check if a feature is enabled.
+ * Only features listed in feature_config and with enabled !== false are enabled.
  * @param {string} featureName - Name of the feature
- * @returns {boolean} True if enabled, false otherwise. Defaults to true if not in config.
+ * @returns {boolean} True if listed and enabled, false otherwise (including when not in config).
  */
 export const isFeatureEnabled = async (featureName) => {
   const config = await fetchFeatureConfig();
   const features = config.features || {};
   
   if (!(featureName in features)) {
-    // Feature not in config, default to enabled for backward compatibility
-    return true;
+    return false;
   }
   
   return features[featureName].enabled !== false;
 };
 
 /**
- * Check if a plugin is enabled
+ * Check if a plugin is enabled.
+ * Only plugins listed in feature_config and with enabled !== false are enabled.
  * @param {string} pluginName - Name of the plugin
- * @returns {boolean} True if enabled, false otherwise. Defaults to true if not in config.
+ * @returns {boolean} True if listed and enabled, false otherwise (including when not in config).
  */
 export const isPluginEnabled = async (pluginName) => {
   const config = await fetchFeatureConfig();
   const plugins = config.plugins || {};
   
   if (!(pluginName in plugins)) {
-    // Plugin not in config, default to enabled for backward compatibility
-    return true;
+    return false;
   }
   
   return plugins[pluginName].enabled !== false;

@@ -66,7 +66,7 @@ CLI/local-cli-fe-full/src/plugins/
 import React, { useState } from 'react';
 
 // Get API URL from environment or default to localhost:8000
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = window._env_?.VITE_API_URL || "http://localhost:8000";
 
 const CalculatorPage = () => {
   const handleCalculate = async () => {

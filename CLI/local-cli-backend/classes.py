@@ -15,6 +15,7 @@ class DBConnection(BaseModel):
 class Command(BaseModel):
     type: str  # "GET" or "POST"
     cmd: str
+    raw_text: bool = False
 
 
 class Policy(BaseModel):

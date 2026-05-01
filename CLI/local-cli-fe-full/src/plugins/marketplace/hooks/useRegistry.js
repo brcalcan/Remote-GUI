@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { fetchRegistry, fetchRegistryPaginated } from "../marketplace_api";
 
 const useRegistry = () => {
@@ -7,14 +7,14 @@ const useRegistry = () => {
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
 
-  const allPlugins = () => Object.values(plugins).flat();
+  const allPlugins = useCallback(() => Object.values(plugins).flat(), [plugins]);
   const getPlugins = (key) => plugins[key];
 
-  const setPluginResults = (key, value) => {
+  const setPluginResults = useCallback((key, value) => {
     setPlugins((prev) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const fetchPlugins = async (source) => {
+  const fetchPlugins = useCallback(async (source) => {
     if (!source) return;
     setLoading(true);
     setError(null);
@@ -30,9 +30,9 @@ const useRegistry = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setPluginResults]);
 
-  const fetchPluginsPaginated = async (source, page = 0) => {
+  const fetchPluginsPaginated = useCallback(async (source, page = 0) => {
     if (!source) return;
     setLoading(true);
     setError(null);
@@ -45,17 +45,17 @@ const useRegistry = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setPluginResults]);
 
-  const removeSource = (key) => {
+  const removeSource = useCallback((key) => {
     setPlugins((prev) => {
       const next = { ...prev };
       delete next[key];
       return next;
     });
-  };
+  }, []);
 
-  const resetSources = (validSources) => {
+  const resetSources = useCallback((validSources) => {
     setPlugins((prev) => {
       const next = {};
       validSources.forEach((src) => {
@@ -63,7 +63,7 @@ const useRegistry = () => {
       });
       return next;
     });
-  };
+  }, []);
 
   return {
     plugins,

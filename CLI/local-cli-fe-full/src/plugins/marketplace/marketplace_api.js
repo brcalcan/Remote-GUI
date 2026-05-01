@@ -1,4 +1,5 @@
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+// const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = window._env_?.VITE_API_URL || "http://localhost:8080";
 
 const get = async (path) => {
   const res = await fetch(`${API_URL}/${path}`);
@@ -45,9 +46,10 @@ export const fetchRegistryPaginated = async (source, page = 0) => {
 };
 
 export const getInstalledPlugins = () => get("plugins");
-export const getPluginStatus    = (slug) => get(`plugins/status/${encodeURIComponent(slug)}`);
+export const getPluginStatus = (slug) =>
+  get(`plugins/status/${encodeURIComponent(slug)}`);
 
-export const installPlugin   = (plugin) => post("plugins/install", { plugin });
-export const uninstallPlugin = (slug)   => post("plugins/uninstall", { slug });
-export const enablePlugin    = (slug)   => patch("plugins/enable", { slug });
-export const disablePlugin   = (slug)   => patch("plugins/disable", { slug });
+export const installPlugin = (plugin) => post("plugins/install", { plugin });
+export const uninstallPlugin = (slug) => post("plugins/uninstall", { slug });
+export const enablePlugin = (slug) => patch("plugins/enable", { slug });
+export const disablePlugin = (slug) => patch("plugins/disable", { slug });

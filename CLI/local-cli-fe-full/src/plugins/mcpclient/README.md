@@ -31,11 +31,11 @@ This module provides a clean JavaScript API layer that abstracts away the HTTP d
 ### API Base URL Configuration
 
 ```javascript
-const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+const API_URL = window._env_?.VITE_API_URL || "http://localhost:8000";
 ```
 
 **Configuration Strategy**:
-- First checks `window._env_?.REACT_APP_API_URL` (for environment-specific config)
+- First checks `window._env_?.VITE_API_URL` (for environment-specific config)
 - Falls back to `http://localhost:8000` (development default)
 
 **Why**: Allows different API URLs for development, staging, and production without code changes.

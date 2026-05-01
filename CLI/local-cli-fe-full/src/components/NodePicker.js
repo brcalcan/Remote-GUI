@@ -1,36 +1,76 @@
 // src/components/NodePicker.js
-import React, { useState } from 'react';
-import { getConnectedNodes } from '../services/api'; // Adjust the import path as necessary
+import React, { useState, useRef } from 'react';
+import { getConnectedNodes, checkNodeReachable } from '../services/api';
 import { bookmarkNode } from '../services/file_auth';
-import '../styles/NodePicker.css'; // Optional: create a CSS file for node picker styling
+import '../styles/NodePicker.css';
 import { isLoggedIn } from '../services/file_auth';
 import { useEffect } from 'react';
+import { validateNodeConnection } from '../utils/connectionAddress';
 
-const NodePicker = ({ nodes, selectedNode, onAddNode, onSelectNode, onBookmarkAdded }) => {
+const NodePicker = ({ nodes, selectedNode, onAddNode, onRemoveNode, onSelectNode, onBookmarkAdded }) => {
   const [newNode, setNewNode] = useState('');
+  const [connectionError, setConnectionError] = useState(null);
+  const [connectWarning, setConnectWarning] = useState(null);
   const [error, setError] = useState(null);
   const [local, setLocal] = useState(false);
   const [bookmarkMsg, setBookmarkMsg] = useState(null);
   const [showAddNode, setShowAddNode] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     if (!bookmarkMsg) return;
 
     const timer = setTimeout(() => {
       setBookmarkMsg(null);
-    }, 5000); // 3000ms = 3s
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [bookmarkMsg]);
 
-  const handleAdd = () => {
-    // Basic validation: check that new node is not empty, and ideally matches "ip:port" format
-    if (newNode.trim()) {
-      onAddNode(newNode.trim());
-      onSelectNode(newNode.trim());
-      setNewNode('');
-      setShowAddNode(false);
+  useEffect(() => {
+    if (!connectWarning) return;
+    const timer = setTimeout(() => setConnectWarning(null), 15000);
+    return () => clearTimeout(timer);
+  }, [connectWarning]);
+
+  const dismissWarning = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
     }
+    setChecking(false);
+    setConnectWarning(null);
+  };
+
+  const handleAdd = () => {
+    const check = validateNodeConnection(newNode);
+    if (!check.ok) {
+      setConnectionError(check.message);
+      return;
+    }
+    setConnectionError(null);
+    setConnectWarning(null);
+
+    onAddNode(check.value);
+    onSelectNode(check.value);
+    setNewNode('');
+    setShowAddNode(false);
+
+    // Fire reachability check in the background — never blocks the UI
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setChecking(true);
+
+    checkNodeReachable(check.value, { signal: controller.signal }).then((result) => {
+      abortRef.current = null;
+      setChecking(false);
+      if (!result.ok) {
+        setConnectWarning(
+          result.message || `Unable to confirm connectivity to ${check.value}.`
+        );
+      }
+    });
   };
 
   const handleAddConnectedNodes = async (e) => {
@@ -99,6 +139,8 @@ const NodePicker = ({ nodes, selectedNode, onAddNode, onSelectNode, onBookmarkAd
     const value = e.target.value;
     if (value === 'add-node') {
       setShowAddNode(true);
+    } else if (value === 'remove-node') {
+      if (onRemoveNode) onRemoveNode(selectedNode);
     } else {
       onSelectNode(value);
       setShowAddNode(false);
@@ -111,17 +153,25 @@ const NodePicker = ({ nodes, selectedNode, onAddNode, onSelectNode, onBookmarkAd
       <div className="node-picker-container">
         <div className="connection-box">
           <input
-            className="node-picker-input"
+            className={`node-picker-input${connectionError ? ' invalid' : ''}`}
             type="text"
-            placeholder="Enter Node Connection (IP:Port)"
+            placeholder="IP:Port only (e.g. 192.168.1.1:32349) — no http://"
             value={newNode}
-            onChange={(e) => setNewNode(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+            onChange={(e) => {
+              setNewNode(e.target.value);
+              if (connectionError) setConnectionError(null);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
           <button className="node-picker-btn primary" onClick={handleAdd}>
             Connect
           </button>
         </div>
+        {connectionError && (
+          <div className="node-picker-connection-error" role="alert">
+            {connectionError}
+          </div>
+        )}
         {bookmarkMsg && (
           <div className="bookmark-msg">
             {bookmarkMsg}
@@ -151,6 +201,7 @@ const NodePicker = ({ nodes, selectedNode, onAddNode, onSelectNode, onBookmarkAd
             </option>
           ))}
           <option value="add-node">+ Add New Node</option>
+          {onRemoveNode && <option value="remove-node">− Remove Current Node</option>}
         </select>
         
         <button className="node-picker-btn secondary" onClick={handleBookmark}>
@@ -158,15 +209,30 @@ const NodePicker = ({ nodes, selectedNode, onAddNode, onSelectNode, onBookmarkAd
         </button>
       </div>
 
+      {checking && (
+        <div className="node-picker-connecting-msg">
+          Verifying node is reachable…
+        </div>
+      )}
+      {connectWarning && (
+        <div className="node-picker-warning">
+          {connectWarning}
+          <button className="node-picker-warning-dismiss" onClick={dismissWarning}>✕</button>
+        </div>
+      )}
+
       {showAddNode && (
         <div className="add-node-section">
           <input
-            className="node-picker-input"
+            className={`node-picker-input${connectionError ? ' invalid' : ''}`}
             type="text"
-            placeholder="Enter New Node Connection (IP:Port)"
+            placeholder="IP:Port only (e.g. 192.168.1.1:32349) — no http://"
             value={newNode}
-            onChange={(e) => setNewNode(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+            onChange={(e) => {
+              setNewNode(e.target.value);
+              if (connectionError) setConnectionError(null);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
           <button className="node-picker-btn primary" onClick={handleAdd}>
             Add & Connect
@@ -174,9 +240,16 @@ const NodePicker = ({ nodes, selectedNode, onAddNode, onSelectNode, onBookmarkAd
           <button className="node-picker-btn cancel" onClick={() => {
             setShowAddNode(false);
             setNewNode('');
+            setConnectionError(null);
           }}>
             Cancel
           </button>
+        </div>
+      )}
+
+      {showAddNode && connectionError && (
+        <div className="node-picker-connection-error" role="alert">
+          {connectionError}
         </div>
       )}
 

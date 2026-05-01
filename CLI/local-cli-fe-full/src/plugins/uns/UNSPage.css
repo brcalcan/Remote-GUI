@@ -418,6 +418,28 @@
   border-bottom: 1px solid #dee2e6;
 }
 
+.uns-side-panel-description {
+  margin-bottom: 12px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #007bff;
+}
+
+.uns-side-panel-description strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #495057;
+  font-size: 14px;
+}
+
+.uns-side-panel-description-text {
+  font-size: 13px;
+  color: #212529;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .uns-side-panel-info-row {
   margin-bottom: 10px;
   font-size: 14px;
@@ -456,6 +478,43 @@
 .uns-item.selected {
   background-color: #e7f3ff;
   border-color: #007bff;
+}
+
+/* Data indicator styles */
+/* Only apply blue background when item definitively has data */
+.uns-item.has-data {
+  background-color: #f0f9ff;
+}
+
+.uns-item.has-data:hover {
+  background-color: #e0f2fe;
+}
+
+/* Don't apply any special styling for no-data - just leave it normal */
+/* .uns-item.no-data removed - we don't want to highlight items without data */
+
+.uns-item.checking-data {
+  position: relative;
+}
+
+.uns-item-data-indicator {
+  margin-left: 6px;
+  font-size: 12px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.uns-item-data-indicator.checking {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Scrollbar styling for side panel */
@@ -549,6 +608,23 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+.uns-time-column-select {
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: white;
+  cursor: pointer;
+  min-width: 140px;
+  transition: border-color 0.2s;
+}
+
+.uns-time-column-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 .uns-time-range-refresh-btn {
   padding: 6px 12px;
   background-color: #007bff;
@@ -577,86 +653,8 @@
   border-top: 1px solid #dee2e6;
 }
 
-.uns-sql-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 2px solid #dee2e6;
-  margin-bottom: 15px;
-}
-
-.uns-sql-tab {
-  padding: 10px 20px;
-  background-color: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6c757d;
-  transition: all 0.2s;
-  position: relative;
-  top: 2px;
-}
-
-.uns-sql-tab:hover {
-  color: #007bff;
-  background-color: #f8f9fa;
-}
-
-.uns-sql-tab.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
-  font-weight: 600;
-}
-
 .uns-sql-tab-content {
   width: 100%;
-}
-
-.uns-custom-query-container {
-  margin-bottom: 15px;
-}
-
-.uns-custom-query-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: 'Courier New', monospace;
-  resize: vertical;
-  min-height: 120px;
-  margin-bottom: 10px;
-  transition: border-color 0.2s;
-}
-
-.uns-custom-query-input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-.uns-custom-query-execute-btn {
-  padding: 8px 16px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  width: 100%;
-}
-
-.uns-custom-query-execute-btn:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-.uns-custom-query-execute-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .uns-sql-header {
@@ -664,6 +662,27 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.uns-sql-export-btns {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.uns-export-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.uns-export-btn:hover {
+  background-color: #0056b3;
 }
 
 .uns-side-panel-sql strong {
@@ -770,6 +789,308 @@
 
 .uns-sql-table-container::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+
+/* SQL line chart */
+.uns-sql-chart {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: #ffffff;
+}
+
+.uns-sql-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #495057;
+}
+
+.uns-sql-chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.uns-sql-chart-controls label {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.uns-sql-chart-controls select {
+  padding: 4px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.uns-sql-chart-export-btn {
+  margin-left: 8px;
+  padding: 4px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  color: #495057;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.uns-sql-chart-export-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.uns-sql-chart-export-btn:active {
+  background: #dee2e6;
+}
+
+.uns-sql-chart-zoom-btns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.uns-sql-chart-zoom-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 18px;
+  line-height: 1;
+  color: #495057;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.uns-sql-chart-zoom-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.uns-sql-chart-zoom-btn:active {
+  background: #dee2e6;
+}
+
+.uns-sql-chart-zoom-hint {
+  font-size: 11px;
+  color: #6c757d;
+  margin-left: 8px;
+}
+
+.uns-sql-chart-body {
+  width: 100%;
+  min-height: 220px;
+  position: relative;
+  user-select: none; /* Prevent text selection while dragging */
+}
+
+.uns-sql-chart-body:active {
+  cursor: grabbing !important;
+}
+
+/* Scrollbar below chart */
+.uns-sql-chart-scrollbar {
+  margin-top: 8px;
+  height: 12px;
+  width: 100%;
+  background: #e9ecef;
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+}
+
+.uns-sql-chart-scrollbar-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 24px;
+  background: #6c757d;
+  border-radius: 4px;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.uns-sql-chart-scrollbar-thumb:active {
+  cursor: grabbing;
+  background: #495057;
+}
+
+.uns-sql-chart-scrollbar-thumb:hover {
+  background: #5a6268;
+}
+
+/* Recharts container – fixed height keeps aspect ratio, no stretch */
+.uns-sql-chart-body .recharts-responsive-container {
+  min-height: 220px;
+}
+
+/* Tooltip on hover over data points */
+.uns-chart-tooltip {
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.uns-chart-tooltip-time {
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.uns-chart-tooltip-value {
+  color: #212529;
+}
+
+.uns-chart-tooltip-value strong {
+  color: #007bff;
+}
+
+/* Data Nodes section */
+.uns-data-nodes-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.uns-data-nodes-section > strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #495057;
+  font-size: 14px;
+}
+
+.uns-data-nodes-loading {
+  padding: 15px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.uns-data-nodes-error {
+  padding: 12px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.uns-data-nodes-empty {
+  padding: 15px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+.uns-data-nodes-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.uns-data-nodes-table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.uns-data-nodes-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.uns-data-nodes-table-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.uns-data-nodes-table-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Column details below chart */
+.uns-column-details {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+.uns-column-details-title {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #495057;
+}
+
+.uns-column-details-loading {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.uns-column-details-error {
+  font-size: 12px;
+  color: #dc3545;
+}
+
+.uns-column-details-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.uns-column-details-stat {
+  font-size: 13px;
+  color: #212529;
+}
+
+.uns-column-details-label {
+  color: #6c757d;
+  margin-right: 4px;
+}
+
+.uns-column-details-string {
+  font-size: 13px;
+}
+
+.uns-column-details-row {
+  margin-bottom: 8px;
+}
+
+.uns-column-details-row:last-child {
+  margin-bottom: 0;
+}
+
+.uns-column-details-list {
+  margin: 6px 0 0 0;
+  padding-left: 20px;
+}
+
+.uns-column-details-list li {
+  margin-bottom: 4px;
+}
+
+.uns-column-details-ts {
+  font-size: 11px;
+  color: #6c757d;
 }
 
 

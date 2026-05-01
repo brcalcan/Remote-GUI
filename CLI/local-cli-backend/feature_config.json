@@ -26,7 +26,7 @@
       "backend_router": "sql_router"
     },
     "blockchain": {
-      "enabled": false,
+      "enabled": true,
       "description": "Blockchain Manager"
     },
     "presets": {
@@ -75,15 +75,22 @@
       "slug": "anylog/marketplace",
       "enabled": true
     },
-    "dev/ssh-plugin": {
-      "name": "ssh-plugin",
-      "enabled": true,
-      "description": "Remote Console"
-    },
     "dev/chat-plugin": {
       "name": "Chat",
       "enabled": true,
       "description": "Interact with your Anylog data through a chatbot"
+    },
+    "sshclient": {
+      "enabled": false,
+      "description": "SSH Client Plugin"
+    },
+    "uns": {
+      "enabled": true,
+      "description": "Unified Namespace Plugin - Provides filesystem-like interface for blockchain metadata"
+    },
+    "videostreamviewer": {
+      "enabled": true,
+      "description": "Video Stream Viewer Plugin"
     }
   },
   "version": "1.0.0"

@@ -13,6 +13,7 @@ from decorators import wrap_sse_stream
 from feature_config_loader import (
     disable_plugin_feature,
     enable_plugin_feature,
+    resolve_plugin_enabled_from_config,
 )
 from plugins.base import InstalledPlugin, MarketplacePlugin
 from plugins.engine import get_plugin_engine
@@ -69,44 +70,17 @@ def get_main():
     return RedirectResponse("/plugins/", 301)
 
 
-# @plugins_router.get("/")
-# async def return_plugins():
-#     installed_plugins = manager.get_installed_plugins()
-#     return [
-#         {
-#             "id": plugin.core.id,
-#             "name": plugin.core.name,
-#             "slug": plugin.core.slug,
-#             "version": plugin.core.version,
-#             "description": plugin.core.description,
-#             "remoteUrl": f"/official-plugins/{plugin.core.slug}/frontend/build/remoteEntry.js",
-#             "download_link": f"",
-#             "readme_link": f"",
-#             "thumbnail": f"",
-#         }
-#         for plugin in installed_plugins
-#     ]
-
 @plugins_router.get("/")
 async def return_plugins():
+    """Installed plugins for the host UI; includes ``enabled`` from feature_config (do not omit disabled)."""
     local_plugins = manager.get_local_plugins()
     return [
         {
             **p.flatten(),
-            "remoteUrl": f"/official-plugins/{p.core.slug}/frontend/build/remoteEntry.js",
+            "remoteUrl": f"/official-plugins/{p.core.slug}/frontend/dist/remoteEntry.js",
+            "enabled": resolve_plugin_enabled_from_config(p.core.slug),
         }
         for p in local_plugins
-    ]
-    return [
-        {
-            "id": plugin.core.id,
-            "name": plugin.core.name,
-            "slug": plugin.core.slug,
-            "version": plugin.core.version,
-            "description": plugin.core.description,
-            "remoteUrl": f"/official-plugins/{plugin.core.slug}/frontend/build/remoteEntry.js",
-        }
-        for plugin in installed_plugins
     ]
 
 
@@ -123,7 +97,12 @@ async def post_install_plugin(req: InstallRequest):
                 raise HTTPException(
                     409, detail="Install already in progress for this plugin"
                 )
-            result = install_task.result()
+            try:
+                result = install_task.result()
+            except plugins.exceptions.InstallError as e:
+                raise HTTPException(400, detail=e.message) from e
+            except Exception as e:
+                raise HTTPException(400, detail=str(e)) from e
             if isinstance(result, InstalledPlugin):
                 raise HTTPException(400, detail="Plugin already installed")
 
@@ -132,6 +111,8 @@ async def post_install_plugin(req: InstallRequest):
 
     except plugins.exceptions.InvalidPluginStructureError as e:
         raise HTTPException(400, f"Malformed plugin: {e.message}")
+    except plugins.exceptions.InstallError as e:
+        raise HTTPException(400, detail=e.message) from e
 
 
 @plugins_router.get("/status/{slug:path}")
@@ -184,18 +165,22 @@ async def post_uninstall_plugin(req: ModificationRequest):
 
 @plugins_router.patch("/enable")
 async def enable_plugin(req: ModificationRequest):
-    # try:
-    installed = manager.get_local_plugins()
-    for plugin in installed:
-        if plugin.core.slug == req.slug:
-            print("Starting plugin from engine")
-            await manager.start_plugin(plugin.to_installed())
-            enable_plugin_feature(req.slug)
-            return
+    try:
+        installed = manager.get_local_plugins()
+        for plugin in installed:
+            if plugin.core.slug == req.slug:
+                print("Starting plugin from engine")
+                await manager.start_plugin(plugin.to_installed())
+                enable_plugin_feature(req.slug)
+                return {"slug": req.slug, "status": "enabled", "enabled": True}
 
-    raise HTTPException(400, detail=f"No installed plugin named: {req.slug}")
-    # except Exception as e:
-    #     raise HTTPException(400, detail=str(e))
+        raise HTTPException(404, detail=f"No installed plugin named: {req.slug}")
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(400, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(400, detail=str(e)) from e
 
 
 @plugins_router.patch("/disable")
@@ -207,8 +192,14 @@ async def disable_plugin(req: ModificationRequest):
                 print("Stopping plugin from engine")
                 await manager.stop_plugin(req.slug)
                 disable_plugin_feature(req.slug)
+                return {"slug": req.slug, "status": "disabled", "enabled": False}
+        raise HTTPException(404, detail=f"No installed plugin with slug: {req.slug}")
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(400, detail=str(e)) from e
     except Exception as e:
-        raise HTTPException(400, detail=str(e))
+        raise HTTPException(400, detail=str(e)) from e
 
 
 @plugins_router.get("/installed")

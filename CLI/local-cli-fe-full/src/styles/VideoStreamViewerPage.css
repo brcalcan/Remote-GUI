@@ -1,0 +1,370 @@
+.video-stream-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.video-stream-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.video-stream-header h2 {
+  margin: 0;
+  color: #111;
+  font-size: 28px;
+}
+
+.video-stream-header p {
+  margin: 4px 0 0;
+  color: #5c6670;
+  max-width: 640px;
+}
+
+.stream-form-section {
+  background: #f8fafc;
+  border: 1px solid #e1e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.viewer-settings {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.viewer-settings label {
+  font-weight: 600;
+  color: #1f2933;
+}
+
+.viewer-settings select {
+  border: 1px solid #cbd2d9;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  min-width: 72px;
+  max-width: 90px;
+  width: auto;
+  background: #fff;
+}
+
+.stream-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2933;
+}
+
+.form-group input {
+  border: 1px solid #cbd2d9;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.form-group small {
+  color: #829ab1;
+  font-size: 12px;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-width: 150px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+}
+
+.ghost-button {
+  border: 1px solid #94a3b8;
+  background: transparent;
+  color: #1f2933;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.ghost-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ghost-button:hover {
+  background: #e2e8f0;
+}
+
+.ghost-button.mini,
+.primary-button.mini {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.video-stream-error {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.video-stream-empty {
+  text-align: center;
+  padding: 48px;
+  border: 2px dashed #cbd5f5;
+  border-radius: 16px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.video-stream-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.video-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease, border 0.2s ease;
+}
+
+.video-card.dragging {
+  opacity: 0.7;
+  transform: scale(1.02);
+  box-shadow: 0 15px 35px rgba(30, 41, 59, 0.2);
+}
+
+.video-card.drop-target {
+  border-color: #2563eb;
+}
+
+.video-card-header,
+.video-card-footer {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.video-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.video-card-header h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.video-card-title {
+  cursor: text;
+}
+
+.video-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.inline-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inline-edit-form input {
+  border: 1px solid #cbd2d9;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.inline-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ========= VIDEO WRAPPER (iframe-friendly) =========
+   Note: For iframes, the embed itself may crop internally.
+   This wrapper ensures YOU aren't cropping it and provides a reliable sizing box.
+*/
+.video-frame-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9; /* fallback when inline style isn't set yet */
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  overflow: hidden; /* keeps rounded corners clean */
+  border-radius: 0 0 18px 18px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fill wrapper */
+.video-frame-wrapper > iframe,
+.video-frame-wrapper > video,
+.video-frame-wrapper > img {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0 0 18px 18px;
+  display: block;
+}
+
+/* Native <video> should never crop */
+.video-frame-wrapper > video {
+  object-fit: contain !important;
+  object-position: center center;
+  background: #000;
+}
+
+.video-frame-wrapper > img {
+  object-fit: contain;
+  object-position: center center;
+  background: #000;
+}
+
+/* Free Height / Fit mode: stop enforcing aspect ratio and give iframe more height */
+.video-frame-wrapper.auto-height,
+.video-frame-wrapper.fit {
+  aspect-ratio: auto;
+  min-height: 240px;
+}
+
+/* For iframes in fit mode, make them taller so the player doesn't feel "cropped" */
+.video-frame-wrapper.fit > iframe,
+.video-frame-wrapper.auto-height > iframe {
+  height: 480px;      /* adjust to taste: 360 / 480 / 600 */
+  min-height: 240px;
+}
+
+/* For video in fit mode, let it size naturally but cap height */
+.video-frame-wrapper.fit > video,
+.video-frame-wrapper.auto-height > video {
+  height: auto;
+  max-height: 70vh;
+  min-height: 240px;
+}
+
+.video-frame-wrapper.fit > img,
+.video-frame-wrapper.auto-height > img {
+  height: auto;
+  max-height: 70vh;
+}
+
+
+.video-card-footer {
+  font-size: 12px;
+  color: #475569;
+  background: #f8fafc;
+}
+
+.stream-url {
+  flex: 1;
+  word-break: break-all;
+  margin-right: 12px;
+}
+
+.drag-hint {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.footer-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.footer-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #1f2933;
+}
+
+.footer-controls select {
+  border: 1px solid #cbd2d9;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #fff;
+}
+
+@media (max-width: 640px) {
+  .video-stream-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .video-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .video-card-actions {
+    flex-wrap: wrap;
+  }
+}

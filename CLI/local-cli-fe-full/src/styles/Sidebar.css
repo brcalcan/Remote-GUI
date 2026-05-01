@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-height: 0;
 }
 
 .sidebar a {
@@ -49,4 +50,33 @@
 
 .installed-plugin-section a {
   margin-bottom: 12px;
+}
+/* License / About at bottom left */
+.sidebar-version {
+  margin-top: auto;
+  padding: 16px 4px 0;
+  border-top: 1px solid #4e4e6a;
+  font-size: 11px;
+  color: #6b6b80;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-about-link {
+  color: #8b8ba3 !important;
+  margin-bottom: 0 !important;
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+}
+
+.sidebar-about-link:hover {
+  color: #c7c7d9 !important;
+}
+
+.sidebar-licensee {
+  padding: 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

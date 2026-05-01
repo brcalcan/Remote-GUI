@@ -78,17 +78,37 @@ const PluginDetailsView = ({ selectedPlugin, closeModalCallback }) => {
                 marginBottom: "24px",
               }}
             >
-              <img
-                src={selectedPlugin.thumbnail}
-                style={{
-                  width: "90px",
-                  height: "90px",
-                  borderRadius: "20px",
-                  objectFit: "cover",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                }}
-                alt=""
-              />
+              {selectedPlugin.thumbnail ? (
+                <img
+                  src={selectedPlugin.thumbnail}
+                  style={{
+                    width: "90px",
+                    height: "90px",
+                    borderRadius: "20px",
+                    objectFit: "cover",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                  alt=""
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "90px",
+                    height: "90px",
+                    borderRadius: "20px",
+                    background: "#e5e7eb",
+                    color: "#6b7280",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "700",
+                    fontSize: "14px",
+                  }}
+                  aria-hidden
+                >
+                  Plugin
+                </div>
+              )}
               <div>
                 <h2
                   style={{

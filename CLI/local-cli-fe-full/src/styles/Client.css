@@ -47,6 +47,7 @@
     z-index: 10;
   }
 
+  .raw-text-button,
   .paste-button,
   .bookmark-button-small,
   .command-info-button {
@@ -60,6 +61,7 @@
     transition: background-color 0.2s ease;
   }
 
+  .raw-text-button:hover,
   .paste-button:hover,
   .bookmark-button-small:hover:not(:disabled),
   .command-info-button:hover:not(:disabled) {
@@ -70,6 +72,14 @@
   .command-info-button:disabled {
     background: #adb5bd;
     cursor: not-allowed;
+  }
+
+  .raw-text-button.active {
+    background: #28a745;
+  }
+
+  .raw-text-button.active:hover {
+    background: #218838;
   }
 
   .command-info-button {
@@ -118,6 +128,23 @@
   .response-box pre {
     white-space: pre-wrap;
     word-wrap: break-word;
+  }
+
+  .raw-text-subbox {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid #b0c4de;
+    border-radius: 4px;
+    background-color: #fff;
+    padding: 12px;
+    margin-top: 8px;
+  }
+
+  .raw-text-subbox pre {
+    white-space: pre;
+    word-wrap: normal;
+    min-width: min-content;
+    margin: 0;
   }
 
   .execution-time {
@@ -183,6 +210,26 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-x: auto;
+  }
+
+  .table-export-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .table-export-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .table-export-btn:hover {
+    background-color: #0056b3;
   }
    
    

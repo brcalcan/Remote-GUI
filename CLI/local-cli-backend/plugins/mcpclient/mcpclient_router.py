@@ -5,9 +5,34 @@ Integrates Ollama with AnyLog MCP for AI-powered maintenance copilot
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import Optional, List, Dict
+from urllib.parse import urlparse
 import os
 import asyncio
 import json
+
+
+def _is_valid_ollama_endpoint(url: str) -> bool:
+    """Validate that a string looks like a reachable Ollama endpoint URL."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        if not parsed.hostname:
+            return False
+        # Must have a port or be a full hostname (not a partial IP like "192.168.")
+        host = parsed.hostname
+        if host.endswith(".") or host.startswith("."):
+            return False
+        # Reject obviously incomplete IPs like "192.168" or "192.168.210"
+        parts = host.split(".")
+        if all(p.isdigit() for p in parts):
+            if len(parts) != 4:
+                return False
+            if any(int(p) > 255 for p in parts):
+                return False
+        return True
+    except Exception:
+        return False
 
 # Create the API router
 api_router = APIRouter(prefix="/mcpclient", tags=["MCP Client"])
@@ -254,6 +279,12 @@ async def connect_mcp(request: MCPConnectRequest):
             if endpoint:
                 endpoint = endpoint.strip() if endpoint.strip() else None
         
+        if endpoint and not _is_valid_ollama_endpoint(endpoint):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid LLM endpoint URL: '{endpoint}'. Please provide a complete URL like http://host:port"
+            )
+        
         # Check if we can reuse existing connection
         async with _agent_lock:
             if _agent_instance is not None:
@@ -341,6 +372,12 @@ async def list_models(llm_endpoint: Optional[str] = None):
         )
     
     endpoint = llm_endpoint or os.getenv("LLM_ENDPOINT", None)
+    
+    if endpoint and not _is_valid_ollama_endpoint(endpoint):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid LLM endpoint URL: '{endpoint}'. Please provide a complete URL like http://host:port"
+        )
     
     try:
         if endpoint:

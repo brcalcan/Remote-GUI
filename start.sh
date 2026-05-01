@@ -1,29 +1,43 @@
 #!/bin/bash
 set -euo pipefail
 
-# Set default API URL
-export REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+# Set defaults
+export VITE_API_URL=${VITE_API_URL:-http://localhost:8080}
+export REMOTE_GUI_FE=${REMOTE_GUI_FE:-31800}
+export REMOTE_GUI_BE=${REMOTE_GUI_BE:-8080}
 
-# # Inject runtime API URL into config.js (only if you really need to do this at runtime)
-# CONFIG_PATH="/app/CLI/local-cli-fe-full/public/config.js"
-# TEMPLATE_PATH="/app/CLI/local-cli-fe-full/public/config.template.js"
-# sed "s|__REACT_APP_API_URL__|$REACT_APP_API_URL|g" "$TEMPLATE_PATH" > "$CONFIG_PATH"
-
-# write config.js into the build dir that’s actually being served
-BUILD_DIR="/app/CLI/local-cli-fe-full/build"
-cat > "$BUILD_DIR/config.js" <<EOF
+# Write runtime config into the built frontend
+cat > /app/CLI/local-cli-fe-full/build/config.js <<CONF
 window._env_ = {
-  REACT_APP_API_URL: "${REACT_APP_API_URL}"
+  VITE_API_URL: "${VITE_API_URL}"
 };
-EOF
-
-# Don't build frontend here — frontend is already built in the image!
+CONF
 
 # Start backend
-$VIRTUAL_ENV/bin/uvicorn CLI.local-cli-backend.main:app --host 0.0.0.0 --port 8000 &
+$VIRTUAL_ENV/bin/uvicorn CLI.local-cli-backend.main:app --host 0.0.0.0 --port ${REMOTE_GUI_BE} &
 
-# # Serve the frontend build folder using python's simple HTTP server on port 3001
-# cd /app/CLI/local-cli-fe-full/build
-# python3 -m http.server 3001
+# Serve frontend with SPA fallback (serves index.html for all unknown routes)
+python3 - <<PYEOF
+import os, sys
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-serve -s "${BUILD_DIR}" -l 3001
+BUILD_DIR = "/app/CLI/local-cli-fe-full/build"
+PORT = int(os.environ.get("REMOTE_GUI_FE", 31800))
+
+class SPAHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=BUILD_DIR, **kwargs)
+
+    def do_GET(self):
+        # If file exists, serve it normally; otherwise serve index.html
+        path = BUILD_DIR + self.path.split("?")[0]
+        if not os.path.exists(path) or os.path.isdir(path) and not os.path.exists(path + "/index.html"):
+            self.path = "/index.html"
+        return super().do_GET()
+
+    def log_message(self, format, *args):
+        pass  # suppress per-request logs
+
+print(f"Serving frontend on port {PORT}", flush=True)
+HTTPServer(("0.0.0.0", PORT), SPAHandler).serve_forever()
+PYEOF

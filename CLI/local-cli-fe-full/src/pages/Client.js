@@ -4,10 +4,10 @@ import DataTable from '../components/DataTable'; // Adjust path as needed
 import BlobsTable from '../components/BlobsTable'; // Adjust path as needed
 import CommandInfoModal from '../components/CommandInfoModal'; // Command info modal
 import { sendCommand, viewBlobs, viewStreamingBlobs, getBasePresetPolicy } from '../services/api'; // Adjust path as needed
+import { exportToCSV, exportToPDF } from '../utils/tableExport';
 import { getPresetGroups, getPresetsByGroup, addPreset, addPresetGroup } from '../services/file_auth';
 import '../styles/Client.css'; // Optional: create client-specific CSS
 import { useEffect } from 'react';
-import { set } from 'mongoose';
 
 const Client = ({ node }) => {
   const navigate = useNavigate();
@@ -29,6 +29,7 @@ const Client = ({ node }) => {
   const [lastExecutedCommand, setLastExecutedCommand] = useState(null);
   const [executionTimestamp, setExecutionTimestamp] = useState(null);
   const [additionalContent, setAdditionalContent] = useState(null);
+  const [rawTextEnabled, setRawTextEnabled] = useState(false);
   
   // Bookmark functionality
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
@@ -143,6 +144,7 @@ const Client = ({ node }) => {
         command,
         authUser,
         authPassword,
+        rawText: rawTextEnabled,
       });
 
       const endTime = Date.now();
@@ -208,6 +210,8 @@ const Client = ({ node }) => {
         
         setResponseData(result.data);
         setSelectedBlobs([]); // clear any previous selection
+      } else if (result.type === 'raw') {
+        setResponseData(result.data ?? '');
       } else if (result.type === 'json') {
         setResponseData(
           `Command "${command}" was sent to ${node}.\n\n\n${JSON.stringify(
@@ -572,6 +576,14 @@ const Client = ({ node }) => {
             <div className="command-buttons">
               <button
                 type="button"
+                className={`raw-text-button ${rawTextEnabled ? 'active' : ''}`}
+                onClick={() => setRawTextEnabled(v => !v)}
+                title={rawTextEnabled ? "Raw text mode: responses show unparsed output" : "Enable raw text: skip parsing, show raw response"}
+              >
+                {rawTextEnabled ? '📄 Raw ✓' : '📄 Raw'}
+              </button>
+              <button
+                type="button"
                 className="paste-button"
                 onClick={handlePasteFromClipboard}
                 title="Paste from clipboard"
@@ -675,6 +687,16 @@ const Client = ({ node }) => {
           
           {resultType === 'table' && Array.isArray(responseData) && (
             <>
+              {responseData.length > 0 && (
+                <div className="table-export-buttons">
+                  <button type="button" onClick={() => exportToCSV(responseData, 'client-query')} className="table-export-btn" title="Export table to CSV">
+                    Export CSV
+                  </button>
+                  <button type="button" onClick={() => exportToPDF(responseData, null, { title: 'Client Query Results', filename: 'client-query', command: lastExecutedCommand?.command })} className="table-export-btn" title="Export table to PDF">
+                    Export PDF
+                  </button>
+                </div>
+              )}
               <DataTable data={responseData} />
               {additionalContent && (
                 <div className="additional-content">
@@ -702,7 +724,12 @@ const Client = ({ node }) => {
             </>
           )}
 
-          {resultType !== 'table' && resultType !== 'blobs' && resultType !== 'streaming' && (
+          {resultType === 'raw' && (
+            <div className="raw-text-subbox">
+              <pre>{responseData}</pre>
+            </div>
+          )}
+          {resultType !== 'table' && resultType !== 'blobs' && resultType !== 'streaming' && resultType !== 'raw' && (
             <pre>{responseData}</pre>
           )}
         </div>
