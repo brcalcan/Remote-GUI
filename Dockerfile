@@ -3,7 +3,7 @@
 # =====================
 # Frontend build stage
 # =====================
-FROM node:18-slim AS frontend-build
+FROM node:20-slim AS frontend-build
 WORKDIR /app
 
 # Install system deps for native npm packages
@@ -50,7 +50,8 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY requirements.txt .
 
 RUN pip install --upgrade "pip>=26.0" "wheel>=0.45.1" "setuptools>=78.1.1" \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install uv
 
 # Clone AnyLog-API and install into virtualenv
 RUN git clone --branch main --depth 1 https://github.com/AnyLog-co/AnyLog-API /tmp/AnyLog-API \
@@ -79,8 +80,8 @@ ENV CLI_IP=0.0.0.0
 ARG EXPOSE_PORT=8080
 ENV CLI_PORT=${EXPOSE_PORT}
 
-# Install minimal runtime deps
-RUN apt-get update && apt-get install -y --no-install-recommends xsel && \
+# Install runtime deps (xsel + node tooling for plugin frontend builds)
+RUN apt-get update && apt-get install -y --no-install-recommends xsel nodejs npm && \
     apt-get install -y --only-upgrade openssl && \
     rm -rf /var/lib/apt/lists/* && \
     groupadd -r anylog && useradd -r -g anylog -d /app anylog

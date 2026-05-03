@@ -1,35 +1,56 @@
-// Fully Automatic Frontend Plugin Loader
-// Auto-discovers plugin pages by scanning the plugins directory
+const _origCreate = document.createElement.bind(document);
+document.createElement = function (tag, opts) {
+  const el = _origCreate(tag, opts);
+  if (typeof tag === "string" && tag.toLowerCase() === "script") {
+    el.crossOrigin = "anonymous";
+    el.type = "module";
+  }
+  return el;
+};
 
-import React from 'react';
-import { isPluginEnabled } from '../services/featureConfig';
+import React from "react";
+import * as ReactDom from "react-dom";
+import * as ReactJsxRuntime from "react/jsx-runtime";
+import * as tslibModule from "tslib";
+import { initializeDevContext } from "./devContext";
 
-// Cache for plugin order from backend
+const API_URL =
+  window._env_?.VITE_API_URL ||
+  (window.location.port === "8000" || window.location.port === ""
+    ? window.location.origin
+    : "http://localhost:8000");
+
+initializeDevContext();
+
+// ─────────────────────────────────────────────
+// Cache
+// ─────────────────────────────────────────────
+
+export const federationCache = new Map();
+
 let cachedPluginOrder = null;
 let orderFetchPromise = null;
 
-// Fetch plugin order from backend
+// ─────────────────────────────────────────────
+// Plugin order
+// ─────────────────────────────────────────────
+
 const fetchPluginOrder = async () => {
-  if (cachedPluginOrder !== null) {
-    return cachedPluginOrder;
-  }
-  
-  if (orderFetchPromise) {
-    return orderFetchPromise;
-  }
-  
+  if (cachedPluginOrder !== null) return cachedPluginOrder;
+  if (orderFetchPromise) return orderFetchPromise;
+
   orderFetchPromise = (async () => {
     try {
-      const API_URL = window._env_?.VITE_API_URL || import.meta.env.VITE_API_URL || "http://localhost:8080";
-      const response = await fetch(`${API_URL}/plugins/order`);
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch(`${API_URL}/plugins/order`);
+      if (res.ok) {
+        const data = await res.json();
         cachedPluginOrder = data.plugin_order || [];
         return cachedPluginOrder;
       }
-    } catch (error) {
-      console.warn('Failed to fetch plugin order:', error);
+    } catch (err) {
+      console.warn("[PluginLoader] order fetch failed:", err);
     }
+
     cachedPluginOrder = [];
     return cachedPluginOrder;
   })();
@@ -37,166 +58,315 @@ const fetchPluginOrder = async () => {
   return orderFetchPromise;
 };
 
-// Sort plugins according to order config
+// ─────────────────────────────────────────────
+// Utils
+// ─────────────────────────────────────────────
+
 const sortPluginsByOrder = (plugins, order) => {
-  if (!order || order.length === 0) {
-    return Object.keys(plugins).sort().map(key => ({ key, plugin: plugins[key] }));
+  if (!plugins || typeof plugins !== "object") return [];
+
+  if (!order?.length) {
+    return Object.keys(plugins)
+      .sort()
+      .map((key) => ({ key, plugin: plugins[key] }));
   }
 
   const ordered = [];
   const remaining = new Set(Object.keys(plugins));
 
-  for (const pluginName of order) {
-    if (plugins[pluginName]) {
-      ordered.push({ key: pluginName, plugin: plugins[pluginName] });
-      remaining.delete(pluginName);
+  for (const name of order) {
+    if (plugins[name]) {
+      ordered.push({ key: name, plugin: plugins[name] });
+      remaining.delete(name);
     }
   }
 
-  const remainingSorted = Array.from(remaining).sort();
-  for (const pluginName of remainingSorted) {
-    ordered.push({ key: pluginName, plugin: plugins[pluginName] });
+  for (const name of Array.from(remaining).sort()) {
+    ordered.push({ key: name, plugin: plugins[name] });
   }
 
   return ordered;
 };
 
-// Auto-discover plugin pages using Vite's import.meta.glob
-// Uses eager loading so modules are already available — no dynamic re-import needed
+const formatPluginName = (name) =>
+  name
+    .replace(/([A-Z])/g, " $1")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[-_]/g, " ")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+// ─────────────────────────────────────────────
+// LOCAL plugins (Vite)
+// ─────────────────────────────────────────────
+
 export const discoverPluginPages = () => {
   const pluginPages = {};
+  const modules = import.meta.glob("./*/*Page.js", { eager: true });
 
-  const modules = import.meta.glob('./*/**Page.js', { eager: true });
-
-  Object.entries(modules).forEach(([modulePath, module]) => {
+  Object.entries(modules).forEach(([path, mod]) => {
     try {
-      const pathParts = modulePath.split('/');
-      const pluginName = pathParts[1];
+      const parts = path.split("/");
+      const pluginName = parts[1];
 
       if (pluginPages[pluginName]) return;
 
-      const metadata = module.pluginMetadata || {};
-      const PageComponent = module.default;
+      const PageComponent = mod.default;
+      const metadata = mod.pluginMetadata || {};
 
-      if (!PageComponent) {
-        console.warn(`Plugin ${pluginName} has no default export, skipping.`);
-        return;
-      }
+      if (!PageComponent) return;
 
       pluginPages[pluginName] = {
         component: PageComponent,
         path: pluginName,
-        name: metadata.name || formatPluginName(pluginName),
-        icon: metadata.icon || null
+        name: metadata.name || pluginName,
+        icon: metadata.icon || null,
+        _source: "local",
       };
-    } catch (error) {
-      console.warn(`Failed to load plugin from ${modulePath}:`, error);
+    } catch (err) {
+      console.warn("[PluginLoader] local load failed:", path, err);
     }
   });
 
   return pluginPages;
 };
 
-// Helper function to format plugin name (fallback if metadata not provided)
-const formatPluginName = (pluginName) => {
-  const words = pluginName
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(word => word.length > 0);
+// ─────────────────────────────────────────────
+// Federation loader
+// ─────────────────────────────────────────────
 
-  return words
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+const resolveRemoteUrl = (remoteUrl) =>
+  remoteUrl.startsWith("http") ? remoteUrl : `${API_URL}${remoteUrl}`;
+
+const registeredRemotes = new Set();
+
+const normalizeExposedModule = (feExposedModule) => {
+  if (!feExposedModule) return "./PluginApp";
+  const normalized = `./${String(feExposedModule)
+    .replace(/^\.\//, "")
+    .replace(/\.js$/i, "")}`;
+  if (normalized === "./CliPage") return "./PluginApp";
+  return normalized;
 };
 
-// Get plugin pages for routing (sorted by plugin order)
+const buildExposeCandidates = (exposedModule) => {
+  const primary = normalizeExposedModule(exposedModule);
+  const candidates = [primary];
+  if (primary !== "./PluginApp") candidates.push("./PluginApp");
+  return candidates;
+};
+
+const toSharedFactory = (mod) => {
+  const exportModule = { ...mod };
+  if (!("default" in exportModule)) {
+    exportModule.default = mod;
+  }
+  Object.defineProperty(exportModule, "__esModule", {
+    value: true,
+    enumerable: false,
+  });
+  return async () => () => exportModule;
+};
+
+const resolveVersion = (mod, fallback = false) => mod?.version || fallback;
+
+const buildHostShareScope = () => ({
+  react: {
+    [resolveVersion(React, "19.0.0")]: {
+      name: "react",
+      version: resolveVersion(React, "19.0.0"),
+      scope: ["default"],
+      from: "host-manual-loader",
+      loaded: true,
+      shareConfig: { singleton: true, requiredVersion: false },
+      get: toSharedFactory(React),
+    },
+  },
+  "react-dom": {
+    [resolveVersion(ReactDom, "19.0.0")]: {
+      name: "react-dom",
+      version: resolveVersion(ReactDom, "19.0.0"),
+      scope: ["default"],
+      from: "host-manual-loader",
+      loaded: true,
+      shareConfig: { singleton: true, requiredVersion: false },
+      get: toSharedFactory(ReactDom),
+    },
+  },
+  "react/jsx-runtime": {
+    [resolveVersion(ReactJsxRuntime, "19.0.0")]: {
+      name: "react/jsx-runtime",
+      version: resolveVersion(ReactJsxRuntime, "19.0.0"),
+      scope: ["default"],
+      from: "host-manual-loader",
+      loaded: true,
+      shareConfig: { singleton: true, requiredVersion: false },
+      get: toSharedFactory(ReactJsxRuntime),
+    },
+  },
+  tslib: {
+    [resolveVersion(tslibModule, "2.8.1")]: {
+      name: "tslib",
+      version: resolveVersion(tslibModule, "2.8.1"),
+      scope: ["default"],
+      from: "host-manual-loader",
+      loaded: true,
+      shareConfig: { singleton: true, requiredVersion: false },
+      get: toSharedFactory(tslibModule),
+    },
+  },
+});
+
+export const loadFederatedComponent = async ({
+  id,
+  remoteUrl,
+  exposedModule = "./PluginApp",
+}) => {
+  if (federationCache.has(id)) return federationCache.get(id);
+
+  const resolvedUrl = resolveRemoteUrl(remoteUrl);
+
+  try {
+    initializeDevContext();
+
+    const container = await import(/* @vite-ignore */ resolvedUrl);
+
+    // Pass a simple share scope — the plugin declares react as shared/singleton
+    // so the federation runtime will use the host's already-loaded React
+    // rather than loading a second copy.
+    if (container.init) {
+      await container.init(buildHostShareScope());
+    }
+
+    const candidates = buildExposeCandidates(exposedModule);
+    let factory = null;
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        factory = await container.get(candidate);
+        if (factory) break;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    if (!factory) {
+      const requested = normalizeExposedModule(exposedModule);
+      throw new Error(
+        `[Federation] Module "${requested}" not found in remote "${id}". Tried: ${candidates.join(", ")}`,
+        { cause: lastError || undefined },
+      );
+    }
+
+    const mod = factory();
+    const component = mod.default ?? mod;
+
+    federationCache.set(id, component);
+    return component;
+  } catch (err) {
+    console.error("[Federation] load failed:", id, err);
+    throw err;
+  }
+};
+
+// ─────────────────────────────────────────────
+// Eviction
+// ─────────────────────────────────────────────
+
+export const fullEvictPlugin = async (id) => {
+  federationCache.delete(id);
+  registeredRemotes.delete(id);
+};
+
+export const evictFederatedPlugin = ({ id }) => {
+  federationCache.delete(id);
+  registeredRemotes.delete(id);
+};
+
+// ─────────────────────────────────────────────
+// Federation discovery
+// ─────────────────────────────────────────────
+
+export const discoverFederatedPlugins = async () => {
+  const res = await fetch(`${API_URL}/plugins`);
+  const body = await res.json();
+  const plugins = Array.isArray(body) ? body : [];
+
+  const pages = {};
+
+  for (const plugin of plugins) {
+    if (plugin.enabled === false) continue;
+
+    const { id, name, remoteUrl, fe_exposed_module, icon } = plugin;
+
+    const exposedModule = normalizeExposedModule(fe_exposed_module);
+
+    const PluginPage = React.lazy(() =>
+      loadFederatedComponent({ id, remoteUrl, exposedModule }).then((comp) => ({
+        default: comp,
+      })),
+    );
+
+    pages[id] = {
+      component: PluginPage,
+      path: id,
+      name: name || formatPluginName(id),
+      icon: icon || null,
+      _source: "federation",
+      _raw: plugin,
+    };
+  }
+
+  return pages;
+};
+
+// ─────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────
+
+export const initializePluginOrder = () => fetchPluginOrder();
+
 export const getPluginPages = () => {
   const pages = discoverPluginPages();
   const order = cachedPluginOrder || [];
-  const sortedPlugins = sortPluginsByOrder(pages, order);
-
-  if (cachedPluginOrder === null && !orderFetchPromise) {
-    fetchPluginOrder();
-  }
-
-  const sortedPages = {};
-  for (const { key, plugin } of sortedPlugins) {
-    sortedPages[key] = plugin;
-  }
-
-  return sortedPages;
+  const sorted = sortPluginsByOrder(pages, order);
+  const result = {};
+  for (const { key, plugin } of sorted) result[key] = plugin;
+  if (cachedPluginOrder === null && !orderFetchPromise) fetchPluginOrder();
+  return result;
 };
 
-// Get plugin pages filtered by feature config (async)
-export const getPluginPagesFiltered = async () => {
-  const pages = discoverPluginPages();
-  const order = cachedPluginOrder || [];
-  const sortedPlugins = sortPluginsByOrder(pages, order);
+export const refreshPluginPages = async () => {
+  const order = await fetchPluginOrder();
 
-  if (cachedPluginOrder === null && !orderFetchPromise) {
-    fetchPluginOrder();
-  }
+  let local = {};
+  let federated = {};
 
-  const filteredPlugins = [];
-  for (const { key, plugin } of sortedPlugins) {
-    if (await isPluginEnabled(key)) {
-      filteredPlugins.push({ key, plugin });
-    }
-  }
+  try {
+    local = discoverPluginPages();
+  } catch {}
+  try {
+    federated = await discoverFederatedPlugins();
+  } catch {}
 
-  const filteredPages = {};
-  for (const { key, plugin } of filteredPlugins) {
-    filteredPages[key] = plugin;
-  }
+  const merged = { ...local, ...federated };
+  const sorted = sortPluginsByOrder(merged, order);
 
-  return filteredPages;
+  const result = {};
+  for (const { key, plugin } of sorted) result[key] = plugin;
+  return result;
 };
 
-// Get plugin sidebar items (sorted by plugin order)
-export const getPluginSidebarItems = () => {
-  const pages = discoverPluginPages();
+export const getPluginSidebarItems = (pages) => {
+  const resolved = pages ?? getPluginPages();
   const order = cachedPluginOrder || [];
-  const sortedPlugins = sortPluginsByOrder(pages, order);
-
-  if (cachedPluginOrder === null && !orderFetchPromise) {
-    fetchPluginOrder();
-  }
-
-  return sortedPlugins.map(({ plugin }) => ({
+  const sorted = sortPluginsByOrder(resolved, order);
+  return sorted.map(({ plugin }) => ({
     path: plugin.path,
     name: plugin.name,
-    icon: plugin.icon
+    icon: plugin.icon,
   }));
-};
-
-// Get plugin sidebar items filtered by feature config (async)
-export const getPluginSidebarItemsFiltered = async () => {
-  const pages = discoverPluginPages();
-  const order = cachedPluginOrder || [];
-  const sortedPlugins = sortPluginsByOrder(pages, order);
-
-  if (cachedPluginOrder === null && !orderFetchPromise) {
-    fetchPluginOrder();
-  }
-
-  const filteredItems = [];
-  for (const { plugin } of sortedPlugins) {
-    if (await isPluginEnabled(plugin.path)) {
-      filteredItems.push({
-        path: plugin.path,
-        name: plugin.name,
-        icon: plugin.icon
-      });
-    }
-  }
-
-  return filteredItems;
-};
-
-// Initialize plugin order fetch (call this early to preload the order)
-export const initializePluginOrder = () => {
-  const result = fetchPluginOrder();
-  return Promise.resolve(result);
 };

@@ -1,0 +1,340 @@
+.mp-page {
+  padding: 40px;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  background-color: #f9fafb;
+}
+
+.mp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.mp-header-text h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.5px;
+}
+
+.mp-header-text p {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.mp-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.mp-tab-group {
+  display: flex;
+  gap: 6px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 99px;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.mp-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border: none;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  background: transparent;
+  color: #6b7280;
+  letter-spacing: 0.03em;
+}
+
+.mp-tab:hover {
+  color: #374151;
+  background: #e9eaec;
+}
+
+.mp-tab--active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mp-tab-count {
+  font-size: 11px;
+  font-weight: 700;
+  background: #6366f1;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 99px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.mp-search {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  outline: none;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-width: 160px;
+}
+
+.mp-search:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px #eef2ff;
+}
+
+.mp-install-btn.MuiButton-root {
+  border-radius: 14px !important;
+  text-transform: none !important;
+  font-size: 14px !important;
+  border-color: #e5e7eb !important;
+  color: #374151 !important;
+  white-space: nowrap;
+  padding: 9px 18px !important;
+  flex-shrink: 0;
+}
+
+.mp-install-btn.MuiButton-root:hover {
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+}
+
+.mp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.mp-empty {
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.mp-updates-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  border: 1px solid #fde68a;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mp-updates-banner span {
+  font-weight: 500;
+  color: #b45309;
+}
+
+.mp-plugin-update-row {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-plugin-update-meta {
+  font-size: 12px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.mp-plugin-update-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #d97706;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.mp-plugin-update-btn:hover {
+  background: #b45309;
+}
+
+.mp-plugin-update-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.plugin-bubble {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.plugin-bubble:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+}
+
+.plugin-bubble--active {
+  border-color: #a5b4fc;
+  box-shadow: 0 0 0 3px #eef2ff;
+}
+
+/* ── Thumb row ───────────────────────────────────────────────────────────── */
+
+.thumb-container {
+  padding: 16px 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plugin-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.plugin-thumb-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #6366f1;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.version-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.mp-enabled-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: #22c55e;
+  padding: 2px 9px;
+  border-radius: 99px;
+}
+
+.plugin-content {
+  padding: 12px 16px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plugin-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.plugin-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.mp-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin: 0;
+}
+
+.plugin-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-download {
+  padding: 7px 16px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-download:hover {
+  background: #4f46e5;
+}
+
+.btn-uninstall {
+  background: transparent;
+  color: #ef4444;
+  border: 1.5px solid #ef4444;
+}
+
+.btn-uninstall:hover {
+  background: #fff0f0;
+}
+
+.btn-link {
+  font-size: 12px;
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.mp-loader,
+.loader {
+  padding: 48px 32px;
+  color: #64748b;
+  font-size: 14px;
+}

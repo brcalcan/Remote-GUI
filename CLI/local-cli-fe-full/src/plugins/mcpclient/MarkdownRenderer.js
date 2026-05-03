@@ -1,9 +1,5 @@
 import React from 'react';
 
-/**
- * Simple markdown renderer for chat messages
- * Handles: bold, italic, code, lists (with nesting), headers, line breaks
- */
 const MarkdownRenderer = ({ content }) => {
   if (!content) return null;
 
@@ -13,7 +9,6 @@ const MarkdownRenderer = ({ content }) => {
     const parts = [];
     let currentIndex = 0;
 
-    // Pattern to match: **bold**, *italic*, `code`, or regular text
     const patterns = [
       { regex: /\*\*([^*]+)\*\*/g, type: 'bold' },
       { regex: /\*([^*]+)\*/g, type: 'italic' },
@@ -87,7 +82,6 @@ const MarkdownRenderer = ({ content }) => {
     });
   };
 
-  // Helper to calculate indentation level (count leading spaces, 2 spaces = 1 level)
   const getIndentLevel = (line) => {
     const match = line.match(/^(\s*)/);
     if (!match) return 0;
@@ -95,7 +89,6 @@ const MarkdownRenderer = ({ content }) => {
     return Math.floor(spaces / 2); // 2 spaces = 1 indent level
   };
 
-  // Helper to check if line is a list item
   const isListItem = (line) => {
     const trimmed = line.trim();
     return /^[-*]\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed);
@@ -109,7 +102,6 @@ const MarkdownRenderer = ({ content }) => {
     const stack = [{ node: root, level: -1 }];
 
     items.forEach((item) => {
-      // Pop stack until we find the parent for this item's level
       while (stack.length > 1 && stack[stack.length - 1].level >= item.level) {
         stack.pop();
       }
@@ -130,7 +122,6 @@ const MarkdownRenderer = ({ content }) => {
     return root.children;
   };
 
-  // Render list tree recursively
   const renderListTree = (items, keyPrefix = '') => {
     if (!items || items.length === 0) return null;
 

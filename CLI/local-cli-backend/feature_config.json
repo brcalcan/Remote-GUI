@@ -47,28 +47,42 @@
   },
   "plugins": {
     "reportgenerator": {
+      "slug": "anylog/reportgenerator",
       "enabled": true,
       "description": "Report Generator Plugin"
     },
     "nodecheck": {
+      "slug": "anylog/nodecheck",
       "enabled": true,
       "description": "Node Check Plugin"
     },
     "calculator": {
-      "enabled": false,
+      "slug": "anylog/calculator",
+      "enabled": true,
       "description": "Calculator Plugin"
     },
     "grafana": {
+      "slug": "anylog/grafana",
       "enabled": true,
       "description": "Grafana Dashboard Plugin"
     },
     "mcpclient": {
+      "slug": "anylog/mcpclient",
       "enabled": true,
       "description": "MCP Client Plugin - Integrates Ollama with AnyLog MCP"
     },
     "fileuploader": {
       "enabled": true,
       "description": "File Uploader Plugin"
+    },
+    "marketplace": {
+      "slug": "anylog/marketplace",
+      "enabled": true
+    },
+    "dev/chat-plugin": {
+      "name": "Chat",
+      "enabled": true,
+      "description": "Interact with your Anylog data through a chatbot"
     },
     "sshclient": {
       "enabled": false,

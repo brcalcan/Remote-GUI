@@ -127,3 +127,28 @@ export const getEnabledPlugins = async () => {
 export const initializeFeatureConfig = () => {
   return fetchFeatureConfig();
 };
+
+export const invalidateFeatureConfig = () => {
+  cachedFeatureConfig = null;
+  configFetchPromise  = null;
+};
+
+export const setPluginEnabled = async (pluginName, enabled) => {
+  const API_URL = window._env_?.REACT_APP_API_URL || "http://localhost:8000";
+  const response = await fetch(
+    `${API_URL}/feature-config/plugins/${pluginName}`,
+    {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ enabled }),
+    }
+  );
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => response.statusText);
+    throw new Error(`Failed to update plugin "${pluginName}": ${detail}`);
+  }
+
+  invalidateFeatureConfig();
+  await fetchFeatureConfig();
+};

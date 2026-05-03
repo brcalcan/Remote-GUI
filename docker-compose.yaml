@@ -1,6 +1,7 @@
 services:
   remote-gui:
-    image: anylogco/remote-gui:1.0.0-c15f31-amd64
+    #image: anylogco/remote-gui:1.0.0-c15f31-amd64
+    image: anylogco/remote-gui:latest
     container_name: remote-gui
     restart: always
     stdin_open: true
@@ -32,6 +33,6 @@ volumes:
   image-vol:
   usr-mgm-vol:
   report-configs:
-#  ollama-data:
+    #  ollama-data:
 
 
